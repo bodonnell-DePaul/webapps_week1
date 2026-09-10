@@ -1,0 +1,55 @@
+$ curl -v https://www.depaul.edu/ -o /dev/null
+# ---------------------------------------------------------------------------
+# CSC 436 — Week 1 Block A fallback artifact.
+# Captured 2026-08-15 so the "one command, three claims" demo still works when
+# the lecture-hall network does not. Trimmed for legibility; nothing redacted,
+# because nothing here is a secret — that is part of the lesson.
+# ---------------------------------------------------------------------------
+
+*   Trying 140.192.40.72:443...                       # <-- 1. NAME RESOLUTION
+* Connected to www.depaul.edu (140.192.40.72) port 443
+* ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384   # <-- 2. TRUST
+* Server certificate:
+*  subject: CN=www.depaul.edu
+*  start date: Jun  2 00:00:00 2026 GMT
+*  expire date: Jul  3 23:59:59 2027 GMT
+*  subjectAltName: host "www.depaul.edu" matched cert's "www.depaul.edu"
+*  issuer: C=US; O=DigiCert Inc; CN=DigiCert Global G2 TLS RSA SHA256 2020 CA1
+*  SSL certificate verify ok.
+* using HTTP/2                                        # <-- 3. WIRE PROTOCOL
+> GET / HTTP/2
+> Host: www.depaul.edu
+> user-agent: curl/8.7.1
+> accept: */*
+>
+< HTTP/2 200
+< content-type: text/html; charset=utf-8
+< strict-transport-security: max-age=31536000
+< cache-control: max-age=300, public
+<
+* Connection #0 to host www.depaul.edu left intact
+
+# ---------------------------------------------------------------------------
+# The three lines the block is about:
+#
+#   1. RESOLUTION  — "Trying 140.192.40.72:443"
+#      A name became an address. Nothing in the application source chose this.
+#      Week 2 is about who answered, and how long that answer is cached.
+#
+#   2. TRUST       — "SSL connection using TLSv1.3" plus the issuer line
+#      A third party asserted this host's identity and your trust store agreed.
+#      Week 4 is about that chain, and what happens when it is incomplete.
+#
+#   3. PROTOCOL    — "using HTTP/2"
+#      The version was negotiated over ALPN during the handshake, not chosen in
+#      code. Week 4 Block A is about what that negotiation buys you.
+#
+# None of these facts is visible by reading the application source. That is the
+# whole argument of Block A.
+# ---------------------------------------------------------------------------

@@ -1,0 +1,39 @@
+Priya's laptop, 2026-08-15 21:13. Sanitised: host name, MAC, and IPv6 interface
+identifier removed. Private addresses left intact.
+
+C:\> ipconfig /all
+
+Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : REDACTED
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No
+
+Wireless LAN adapter Wi-Fi:
+
+   Connection-specific DNS Suffix  . : lan
+   Description . . . . . . . . . . . : Intel(R) Wi-Fi 6E AX211 160MHz
+   Physical Address. . . . . . . . . : A4-BB-6D-XX-XX-XX
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::[iid-redacted]%14(Preferred)
+   IPv4 Address. . . . . . . . . . . : 192.168.1.47(Preferred)
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Lease Obtained. . . . . . . . . . : Saturday, August 15, 2026 18:41:02
+   Lease Expires . . . . . . . . . . : Sunday, August 16, 2026 18:41:02
+   Default Gateway . . . . . . . . . : 192.168.1.1
+   DHCP Server . . . . . . . . . . . : 192.168.1.1
+   DNS Servers . . . . . . . . . . . : 192.168.1.1
+   NetBIOS over Tcpip. . . . . . . . : Enabled
+
+Ethernet adapter Ethernet:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Description . . . . . . . . . . . : Realtek PCIe GbE Family Controller
+   Physical Address. . . . . . . . . : 54-05-DB-XX-XX-XX
+   DHCP Enabled. . . . . . . . . . . : Yes
+
+
+C:\> route print -4 | findstr 0.0.0.0
+
+          0.0.0.0          0.0.0.0      192.168.1.1     192.168.1.47     35

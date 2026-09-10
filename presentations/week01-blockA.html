@@ -1,0 +1,2059 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From network to web page — Week 1 Block A — CSC 436 — Web Application Systems</title>
+<meta name="description" content="Joining a network, visiting https://www.depaul.edu, and seeing where this course will take us">
+<meta name="generator" content="csc436-deck-pipeline">
+<meta name="course-week" content="01">
+<meta name="course-block" content="A">
+<style>
+/* ============================================================================
+   CSC 436 — Web Application Systems
+   Deck theme: "Operable"
+   ----------------------------------------------------------------------------
+   Shared theme asset. Inlined into every generated HTML deck at build time by
+   presentations/lib/render-html.mjs. Token values mirror assets/theme.json,
+   which is the single source of truth for the PPTX renderer.
+
+   Design canvas: 1280 x 720 CSS px == 13.333in x 7.5in at 96 px/in.
+   Therefore px / 96 = inches and px * 0.75 = points, with no rounding drift
+   between the HTML deck and the PPTX deck.
+
+   Accessibility contract:
+     - Primary content text is 32px on canvas == 24pt projected (the floor).
+     - Every foreground/background pair is verified >= 4.5:1 by
+       scripts/check-contrast.mjs (run via `npm run check:contrast`).
+     - No meaning is carried by hue alone: callouts, diffs and status chips all
+       carry a text label and a shape/icon in addition to color.
+   ========================================================================== */
+
+:root {
+  --bg: #0B1B2B;
+  --bg-deep: #071320;
+  --surface: #17364E;
+  --surface-alt: #1F4363;
+  --rule: #2F5273;
+  --rule-strong: #5B82A6;
+  --text: #F3F8FC;
+  --text-muted: #B6CCDE;
+  --accent: #5EEAD4;
+  --signal: #FCD34D;
+  --danger: #FCA5A5;
+  --success: #86EFAC;
+  --info: #93C5FD;
+
+  --code-surface: #081726;
+  --code-base: #E8F1F8;
+  --code-gutter: #51749A;
+
+  --font-head: "Segoe UI Variable Display", "Segoe UI", Inter, system-ui,
+    -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Segoe UI Variable Text", "Segoe UI", Inter, system-ui,
+    -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-code: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono",
+    "Liberation Mono", ui-monospace, monospace;
+
+  --margin: 72px;
+  --gap: 22px;
+  --radius: 14px;
+  --k: 1;
+}
+
+/* ---------------------------------------------------------------- reset --- */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+body.is-blacked #stage { visibility: hidden; }
+
+/* ---------------------------------------------------------------- stage --- */
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+
+.slide {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1280px;
+  height: 720px;
+  margin-left: -640px;
+  margin-top: -360px;
+  transform: scale(var(--k));
+  transform-origin: center center;
+  background: var(--bg);
+  color: var(--text);
+  display: none;
+  overflow: hidden;
+  /* A quiet directional wash keeps a flat dark deck from looking dead. */
+  background-image:
+    radial-gradient(ellipse 90% 70% at 8% -10%, rgba(94, 234, 212, 0.10), transparent 60%),
+    radial-gradient(ellipse 70% 60% at 100% 108%, rgba(147, 197, 253, 0.08), transparent 62%);
+}
+
+.slide.is-active { display: block; }
+
+.slide-body {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  top: 88px;
+  bottom: 78px;
+  overflow: hidden;
+}
+
+/* The runtime shrink-to-fit target. `.slide-body` is the fixed clipping box;
+   `.fit` holds the content and is zoomed down by deck-runtime.js until the
+   content fits. Height:100% resolves against the unzoomed parent, so zooming
+   out genuinely buys vertical room rather than just making text smaller. */
+.fit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  height: 100%;
+}
+
+.slide.has-sources .slide-body { bottom: 112px; }
+
+/* ------------------------------------------------------------ furniture --- */
+
+.f-rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--accent), #2F5273 55%, transparent);
+  opacity: 0.9;
+}
+
+.f-label {
+  position: absolute;
+  left: var(--margin);
+  top: 38px;
+  font-size: 18px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.f-label b {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.f-foot {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  bottom: 34px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.f-course { letter-spacing: 0.02em; }
+
+.f-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.f-num b { color: var(--text); }
+
+.f-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 5px;
+  width: 100%;
+  background: rgba(47, 82, 115, 0.5);
+}
+
+.f-progress > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--info));
+  transition: width 160ms ease-out;
+}
+
+.sources {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  bottom: 66px;
+  max-height: 54px;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+}
+
+.slide .sources ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: block;
+  font-size: 17px;
+  gap: 0;
+}
+
+.slide .sources li {
+  display: inline;
+  padding-left: 0;
+  font-size: 17px;
+}
+
+.slide .sources li::before { content: none !important; display: none !important; }
+.slide .sources li:not(:last-child)::after { content: " · "; color: var(--rule); }
+.slide .sources a { color: var(--info); text-decoration: none; }
+.slide .sources b { color: var(--text-muted); font-weight: 600; }
+
+/* ----------------------------------------------------------- typography --- */
+
+h1, h2, h3 {
+  font-family: var(--font-head);
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.slide h1 {
+  font-size: 56px;
+  line-height: 1.08;
+  color: var(--text);
+}
+
+.slide h2 {
+  font-size: 40px;
+  line-height: 1.15;
+  color: var(--accent);
+}
+
+.slide h3 {
+  font-size: 30px;
+  line-height: 1.2;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.slide h3 code { text-transform: none; }
+
+.kicker {
+  font-size: 20px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--accent);
+  max-width: none;
+}
+
+.slide p {
+  font-size: 32px;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--text);
+  max-width: 26em;
+}
+
+.slide .lede { color: var(--text-muted); }
+
+.slide ul,
+.slide ol {
+  font-size: 32px;
+  line-height: 1.34;
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.slide li { position: relative; padding-left: 38px; }
+
+.slide ul > li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0.55em;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.slide ol { counter-reset: n; }
+
+.slide ol > li { counter-increment: n; }
+
+.slide ol > li::before {
+  content: counter(n);
+  position: absolute;
+  left: 0;
+  top: 0.06em;
+  width: 30px;
+  text-align: right;
+  font-family: var(--font-head);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.slide li ul,
+.slide li ol {
+  margin-top: 12px;
+  gap: 10px;
+  font-size: 28px;
+}
+
+.slide li ul > li::before {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  top: 0.62em;
+  background: var(--text-muted);
+}
+
+.slide strong { color: #FFFFFF; font-weight: 700; }
+.slide em { color: var(--signal); font-style: italic; }
+
+.slide a { color: var(--info); text-decoration: underline; text-underline-offset: 3px; }
+
+.slide code {
+  font-family: var(--font-code);
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+  font-size: 0.86em;
+  background: rgba(8, 23, 38, 0.85);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 0.06em 0.32em;
+  color: var(--accent);
+}
+
+.slide hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 4px 0;
+  width: 100%;
+}
+
+/* -------------------------------------------------------------- layouts --- */
+
+/* title ------------------------------------------------------------------- */
+
+.slide--title { background-image: radial-gradient(ellipse 80% 90% at 78% 12%, rgba(94, 234, 212, 0.16), transparent 62%); }
+
+.slide--title .f-label { display: none; }
+
+.slide--title .fit { justify-content: center; gap: 22px; }
+
+.slide--title .kicker { font-size: 18px; letter-spacing: 0.22em; color: var(--accent); }
+
+.slide--title h1 {
+  font-size: 76px;
+  line-height: 1.04;
+  max-width: 17em;
+}
+
+.slide--title .sub {
+  font-size: 34px;
+  line-height: 1.3;
+  color: var(--text-muted);
+  max-width: 26em;
+}
+
+.title-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--rule-strong);
+  background: rgba(23, 54, 78, 0.75);
+  color: var(--text-muted);
+}
+
+.chip b { color: var(--accent); font-weight: 700; }
+
+/* section ----------------------------------------------------------------- */
+
+.slide--section { background: var(--bg-deep); }
+
+.slide--section .fit { justify-content: center; gap: 18px; }
+
+.slide--section h1 {
+  font-size: 72px;
+  line-height: 1.06;
+  max-width: 15em;
+}
+
+.slide--section .rule-accent {
+  width: 140px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* quote ------------------------------------------------------------------- */
+
+.slide--quote .fit { justify-content: center; }
+
+.slide--quote blockquote {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 46px;
+  line-height: 1.24;
+  color: var(--text);
+  border-left: 8px solid var(--accent);
+  padding-left: 36px;
+  max-width: 20em;
+  text-wrap: balance;
+}
+
+.slide--quote .attrib {
+  margin-top: 26px;
+  padding-left: 44px;
+  font-size: 26px;
+  color: var(--text-muted);
+}
+
+/* two-column -------------------------------------------------------------- */
+
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  flex: 1;
+  min-height: 0;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.col > h3 {
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.col img {
+  max-width: 100%;
+  max-height: 230px;
+  object-fit: contain;
+  display: block;
+}
+
+.cols--weighted { grid-template-columns: 1.15fr 0.85fr; }
+
+/* code -------------------------------------------------------------------- */
+
+.codeblock {
+  background: var(--code-surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* Never let flex shrink a code block below its content: clipped code is
+     worse than a smaller slide. The runtime shrink-to-fit handles overflow. */
+  flex: 0 0 auto;
+}
+
+/* Fill spare room without shrinking away command lines or bottom padding. */
+.slide--code .fit > .codeblock:last-child,
+.slide--terminal .fit > .codeblock:last-child { flex: 1 0 auto; }
+
+.callout { flex: none; }
+
+.codeblock > figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 22px;
+  background: rgba(47, 82, 115, 0.32);
+  border-bottom: 1px solid var(--rule);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.codeblock > figcaption .lang {
+  font-family: var(--font-code);
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.codeblock pre {
+  margin: 0;
+  padding: 22px 26px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.codeblock code {
+  display: block;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-code);
+  font-size: var(--code-size, 28px);
+  line-height: 1.42;
+  color: var(--code-base);
+  white-space: pre;
+  tab-size: 2;
+}
+
+.slide--code .fit { padding-bottom: 0; }
+.slide--code .codeblock { flex: 1 0 auto; }
+
+/* Line numbering + emphasis, used by the terminal/capture layout. */
+.codeblock code .ln {
+  display: inline-block;
+  width: 2.6em;
+  margin-right: 0.9em;
+  text-align: right;
+  color: var(--code-gutter);
+  user-select: none;
+}
+
+.codeblock code .row { display: block; padding: 0 6px; margin: 0 -6px; border-radius: 4px; }
+
+.codeblock code .row.is-marked {
+  background: rgba(252, 211, 77, 0.16);
+  box-shadow: inset 3px 0 0 var(--signal);
+}
+
+/* terminal ---------------------------------------------------------------- */
+
+.slide--terminal .codeblock,
+.codeblock--terminal { background: #050F1A; }
+
+.codeblock--terminal > figcaption {
+  background: rgba(8, 23, 38, 0.9);
+  font-family: var(--font-code);
+  font-size: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.codeblock--terminal > figcaption::before {
+  content: "● ● ●";
+  letter-spacing: 0.22em;
+  font-size: 14px;
+  color: var(--rule);
+  margin-right: 4px;
+}
+
+.codeblock--terminal code { font-size: var(--code-size, 24px); line-height: 1.42; }
+
+/* image / svg ------------------------------------------------------------- */
+
+.figure {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.figure .frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 18px;
+  overflow: hidden;
+}
+
+.figure--plain .frame { background: none; border: 0; padding: 0; }
+
+.figure img {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Inline SVG fills its frame and letterboxes via preserveAspectRatio, so a
+   diagram can never be the thing that pushes a slide over its height budget. */
+.figure svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.figure figcaption {
+  font-size: 24px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 40em;
+}
+
+.slide--svg .frame { background: none; border: 0; }
+
+/* table ------------------------------------------------------------------- */
+
+.table-wrap {
+  /* Tables must keep their natural height so the runtime's shrink-to-fit pass
+     can see an overfull slide. A flexed, shrinkable table clips rows inside
+     this wrapper before the slide itself appears to overflow. */
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+}
+
+.slide table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 26px;
+  line-height: 1.3;
+}
+
+.slide thead th {
+  background: var(--surface-alt);
+  color: var(--text);
+  font-family: var(--font-head);
+  font-weight: 700;
+  text-align: left;
+  padding: 14px 20px;
+  border-bottom: 2px solid var(--accent);
+  font-size: 24px;
+  letter-spacing: 0.03em;
+}
+
+.slide tbody td {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  color: var(--text);
+}
+
+.slide tbody tr:nth-child(even) td { background: rgba(23, 54, 78, 0.55); }
+.slide tbody tr:last-child td { border-bottom: 0; }
+.slide td code { font-size: 0.82em; }
+
+/* callouts ---------------------------------------------------------------- */
+
+.callout {
+  border-left: 8px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 20px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.callout > .callout-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.callout > .callout-head .ico { font-size: 20px; line-height: 1; }
+
+.callout p,
+.callout li { font-size: 28px; line-height: 1.34; }
+
+.callout ul { gap: 10px; }
+
+.callout--key { border-left-color: #5EEAD4; background: #0E3A38; }
+.callout--key > .callout-head { color: #5EEAD4; }
+.callout--note { border-left-color: #93C5FD; background: #13314F; }
+.callout--note > .callout-head { color: #93C5FD; }
+.callout--tip { border-left-color: #86EFAC; background: #10321F; }
+.callout--tip > .callout-head { color: #86EFAC; }
+.callout--warning { border-left-color: #FCD34D; background: #3A2E07; }
+.callout--warning > .callout-head { color: #FCD34D; }
+.callout--danger { border-left-color: #FCA5A5; background: #3D1717; }
+.callout--danger > .callout-head { color: #FCA5A5; }
+
+/* demo -------------------------------------------------------------------- */
+
+.slide--demo .fit { gap: 16px; }
+
+.slide--demo h1 { font-size: 46px; }
+
+.demo-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  align-self: flex-start;
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: var(--signal);
+  color: #2A1F00;
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.demo-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.demo-col > .demo-panel { flex: 0 1 auto; }
+.demo-col > .demo-panel:first-child:last-child { flex: 1; }
+
+.demo-panel {
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-panel > h3 { font-size: 21px; color: var(--accent); flex: none; }
+.demo-panel ul, .demo-panel ol, .demo-panel p { font-size: 26px; line-height: 1.3; gap: 12px; }
+.demo-panel li { padding-left: 32px; }
+.demo-panel--fallback { border-color: var(--signal); background: #2C2410; }
+.demo-panel--fallback > h3 { color: var(--signal); }
+
+/* checkpoint -------------------------------------------------------------- */
+
+.slide--checkpoint { background: var(--bg-deep); }
+.slide--checkpoint .f-rail { background: linear-gradient(180deg, var(--signal), #8A5A00 60%, transparent); }
+
+.slide--checkpoint .fit { justify-content: center; gap: 26px; }
+
+.cp-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  align-self: flex-start;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 2px solid var(--signal);
+  color: var(--signal);
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.slide--checkpoint h1 { font-size: 48px; max-width: 22em; }
+
+.cp-meta {
+  display: flex;
+  gap: 28px;
+  font-size: 24px;
+  color: var(--text-muted);
+}
+
+.cp-meta b { color: var(--text); }
+
+/* -------------------------------------------------------- overlays / UI --- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  background: #071320;
+  color: var(--text);
+  padding: 40px;
+  overflow: auto;
+}
+
+.overlay.is-open { display: block; }
+
+.overlay h2 {
+  font-family: var(--font-head);
+  font-size: 26px;
+  margin: 0 0 18px;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#help table { border-collapse: collapse; font-size: 17px; max-width: 760px; }
+#help td { padding: 7px 18px 7px 0; vertical-align: top; }
+#help kbd {
+  font-family: var(--font-code);
+  font-size: 15px;
+  background: var(--surface-alt);
+  border: 1px solid var(--rule);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  padding: 3px 9px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* presenter overlay ------------------------------------------------------- */
+
+#presenter { padding: 24px 28px; }
+
+.pv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 20px 26px;
+  height: calc(100vh - 48px);
+}
+
+.pv-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 12px;
+}
+
+.pv-clock {
+  font-family: var(--font-code);
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.pv-clock.is-over { color: var(--danger); }
+
+.pv-bar .pv-pos {
+  font-size: 20px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-bar .pv-hint { margin-left: auto; font-size: 15px; color: var(--text-muted); }
+
+.pv-btn {
+  font: inherit;
+  font-size: 15px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pv-btn:hover { border-color: var(--accent); }
+.pv-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.pv-left, .pv-right { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+
+.pv-thumb {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.pv-thumb > .pv-thumb-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  transform-origin: 0 0;
+}
+
+.pv-thumb .slide {
+  position: static;
+  margin: 0;
+  transform: none;
+  display: block;
+}
+
+.pv-cap {
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.pv-notes {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 20px 24px;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.pv-notes h1, .pv-notes h2, .pv-notes h3 {
+  font-size: 20px;
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+}
+
+.pv-notes p { font-size: 19px; line-height: 1.55; margin: 0 0 12px; max-width: none; color: var(--text); }
+.pv-notes ul, .pv-notes ol { font-size: 19px; gap: 8px; margin: 0 0 12px; }
+.pv-notes li { padding-left: 22px; }
+.pv-notes ul > li::before { width: 8px; height: 8px; top: 0.5em; left: 2px; }
+.pv-notes ol > li::before { font-size: 17px; width: 16px; }
+.pv-notes code { font-size: 0.9em; }
+.pv-notes .empty { color: var(--text-muted); font-style: italic; }
+
+/* overview grid ----------------------------------------------------------- */
+
+#overview .ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.ov-cell {
+  border: 2px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+  aspect-ratio: 16 / 9;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ov-cell.is-current { border-color: var(--accent); }
+.ov-cell:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+
+.ov-cell > .pv-thumb-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.ov-cell > .ov-num {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(7, 19, 32, 0.82);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+
+/* skip link + screen-reader outline --------------------------------------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- print --- */
+
+@page { size: 13.333in 7.5in; margin: 0; }
+
+@media print {
+  html, body {
+    overflow: visible;
+    background: #FFFFFF;
+    color: #0B1B2B;
+    height: auto;
+  }
+
+  #help, #presenter, #overview, .f-progress { display: none !important; }
+
+  #stage { position: static; }
+
+  .slide {
+    /* Print handouts are light-on-white: readable, photocopy-safe, and it does
+       not empty a departmental toner cartridge for a 45-slide deck. */
+    position: relative;
+    left: auto; top: auto;
+    margin: 0;
+    transform: none;
+    display: block !important;
+    page-break-after: always;
+    break-after: page;
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #0B1B2B;
+    border-bottom: 1px solid #C3D4E2;
+  }
+
+  .slide:last-of-type { page-break-after: auto; break-after: auto; }
+
+  .slide h1, .slide p, .slide li, .slide td, .figure figcaption { color: #0B1B2B; }
+  .slide h2, .kicker, .col > h3, .demo-panel > h3 { color: #0E7C6B; }
+  .slide h3 { color: #3E5A72; }
+  .slide strong { color: #000000; }
+  .slide em { color: #8A5A00; }
+  .slide ul > li::before { background: #0E7C6B; }
+  .slide ol > li::before { color: #0E7C6B; }
+  .slide li ul > li::before { background: #3E5A72; }
+  .f-label, .f-foot, .sources, .figure figcaption { color: #3E5A72; }
+  .f-label b { color: #0E7C6B; }
+  .f-num b { color: #0B1B2B; }
+  .f-rail { background: #0E7C6B; }
+  .chip { background: #F1F5F9; border-color: #C3D4E2; color: #3E5A72; }
+  .chip b { color: #0E7C6B; }
+  .slide--section .rule-accent { background: #0E7C6B; }
+  .slide--quote blockquote { color: #0B1B2B; border-left-color: #0E7C6B; }
+  .slide--quote .attrib { color: #3E5A72; }
+  .slide code { background: #F1F5F9; border-color: #C3D4E2; color: #0E5C50; }
+  .slide thead th { background: #E2E8F0; color: #0B1B2B; border-bottom-color: #0E7C6B; }
+  .slide tbody td { border-bottom-color: #C3D4E2; color: #0B1B2B; }
+  .slide tbody tr:nth-child(even) td { background: #F8FAFC; }
+  .table-wrap, .figure .frame, .demo-panel { border-color: #C3D4E2; background: #FFFFFF; }
+  .callout { background: #F1F5F9 !important; color: #0B1B2B; }
+  .callout--key { border-left-color: #0E7C6B; }
+  .callout--key > .callout-head { color: #0E5C50; }
+  .callout--note > .callout-head { color: #1D4ED8; }
+  .callout--tip > .callout-head { color: #14532D; }
+  .callout--warning > .callout-head { color: #8A5A00; }
+  .callout--danger > .callout-head { color: #9B1C1C; }
+  .callout p, .callout li { color: #0B1B2B; }
+  .demo-banner { background: #FCD34D; color: #2A1F00; }
+  .cp-banner { border-color: #8A5A00; color: #8A5A00; }
+  .demo-panel--fallback { background: #FFFBEB; border-color: #8A5A00; }
+  .demo-panel--fallback > h3 { color: #8A5A00; }
+  .sources a { color: #1D4ED8; }
+
+  /* Code keeps its dark surface in print: inverting syntax highlighting to a
+     light theme would break the token color contract the PPTX also uses. */
+  .codeblock { background: #081726 !important; border-color: #2F5273; }
+  .codeblock code { color: #E8F1F8; }
+  .codeblock > figcaption { background: rgba(47, 82, 115, 0.32); color: #B6CCDE; }
+}
+
+@media print {
+  html, body, .slide { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* --------------------------------------------------- reduced motion / hc --- */
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+
+/* generated from assets/theme.json */
+.codeblock code { color: #E8F1F8; }
+.codeblock code .ln { color: #51749A; }
+.hljs-keyword,
+.hljs-keyword_,
+.hljs-section,
+.hljs-section_,
+.hljs-tag,
+.hljs-tag_,
+.hljs-name,
+.hljs-name_,
+.hljs-selector-tag,
+.hljs-selector-tag_,
+.hljs-property,
+.hljs-property_,
+.hljs-template-tag,
+.hljs-template-tag_ { color: #7DD3FC; }
+.hljs-built_in,
+.hljs-built_in_,
+.hljs-type,
+.hljs-type_,
+.hljs-bullet,
+.hljs-bullet_,
+.hljs-class,
+.hljs-class_ { color: #5EEAD4; }
+.hljs-literal,
+.hljs-literal_,
+.hljs-number,
+.hljs-number_,
+.hljs-title,
+.hljs-title_,
+.hljs-function,
+.hljs-function_,
+.hljs-selector-class,
+.hljs-selector-class_,
+.hljs-selector-id,
+.hljs-selector-id_ { color: #FCD34D; }
+.hljs-string,
+.hljs-string_,
+.hljs-regexp,
+.hljs-regexp_,
+.hljs-addition,
+.hljs-addition_,
+.hljs-char,
+.hljs-char_ { color: #86EFAC; }
+.hljs-comment,
+.hljs-comment_,
+.hljs-meta,
+.hljs-meta_,
+.hljs-quote,
+.hljs-quote_,
+.hljs-doctag,
+.hljs-doctag_ { color: #9FB6CA; }
+.hljs-params,
+.hljs-params_,
+.hljs-operator,
+.hljs-operator_,
+.hljs-emphasis,
+.hljs-emphasis_,
+.hljs-subst,
+.hljs-subst_ { color: #E8F1F8; }
+.hljs-attr,
+.hljs-attr_,
+.hljs-attribute,
+.hljs-attribute_ { color: #C4B5FD; }
+.hljs-variable,
+.hljs-variable_,
+.hljs-symbol,
+.hljs-symbol_,
+.hljs-template-variable,
+.hljs-template-variable_ { color: #F3B4C8; }
+.hljs-punctuation,
+.hljs-punctuation_ { color: #B6CCDE; }
+.hljs-deletion,
+.hljs-deletion_ { color: #FCA5A5; }
+.hljs-strong,
+.hljs-strong_ { color: #FFFFFF; }
+.hljs-link,
+.hljs-link_ { color: #93C5FD; }
+</style>
+</head>
+<body>
+<a class="sr-only" href="#stage">Skip to slides</a>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+<main id="stage" data-deck-id="week01-blockA">
+<section class="slide slide--title" data-layout="title" data-phase="review" data-source-block="A" data-source-slide="1" data-title="" aria-label="Slide 1: title">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;Short review</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>1</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><p class="kicker">CSC 436 — Web Application Systems</p>
+<h1>From network to web page</h1>
+<p class="sub">Joining a network, visiting https://www.depaul.edu, and seeing where this course will take us</p>
+<div class="title-meta"><span class="chip"><b>Week 1</b> · Block A</span><span class="chip">30 minutes</span><span class="chip">Updated 2026-09-05</span></div>
+<p>Before we examine any individual part, let&#39;s tell the <strong>whole story</strong> — in plain language, with every term defined as it appears.</p>
+</div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="review" data-source-block="A" data-source-slide="2" data-title="Two laptops, one destination" aria-label="Slide 2: Two laptops, one destination">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;Short review</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>2</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>Two laptops, one destination</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>An illustrative classroom scenario: one simple goal, many cooperating systems.</p>
+</aside><div class="cols"><div class="col"><h3>Maya&#39;s Mac</h3>
+<ul>
+<li>Joins the classroom Wi-Fi</li>
+<li>Enters <code>https://www.depaul.edu</code></li>
+<li>Opens the home page and follows a link</li>
+</ul>
+</div><div class="col"><h3>Luis&#39;s Windows laptop</h3>
+<ul>
+<li>Joins the same classroom Wi-Fi</li>
+<li>Enters the same web address</li>
+<li>Wants the same usable page</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--bullets has-sources" data-layout="bullets" data-phase="logistics" data-source-block="A" data-source-slide="3" data-title="Where the course rules live" aria-label="Slide 3: Where the course rules live">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;Weekly logistics</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>3</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>Where the course rules live</h1>
+<ul>
+<li><strong>The syllabus is the rulebook.</strong> Schedule, grading, deadlines, and policies live there, and we walk through it separately today</li>
+<li><strong>These slides never replace it.</strong> If a slide and the syllabus ever disagree, the syllabus wins</li>
+<li><strong>Two companion documents:</strong> the AI-use policy, and the evidence standard that defines what counts as proof in this course</li>
+<li><strong>Unresolved questions go to the discussion board,</strong> so an answer is written down once for everybody</li>
+</ul>
+
+<aside class="callout callout--tip" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">✦</span><span>Tip</span></p><p><strong>Logistics questions: now</strong>, before we start the journey. After this slide we are on the technical material.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../../../docs/new_syllabus.md">syllabus</a> · <a href="../../../docs/ai-use-policy.md">AI use policy</a> · <a href="../../../docs/evidence-standard.md">evidence standard</a></li></ul></div>
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="4" data-title="The map we will keep coming back to" aria-label="Slide 4: The map we will keep coming back to">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>4</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>The map we will keep coming back to</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 280" role="img" aria-label="Five stages: join a network, get settings, find the website, exchange a page, and use the page">
+  <defs><marker id="deck-s4-g1-journey-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="10" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="250" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="490" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="730" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="970" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <g fill="#F3F8FC" font-size="27" font-weight="700">
+      <text x="110" y="106">Join</text><text x="350" y="106">Get settings</text><text x="590" y="106">Find the site</text><text x="830" y="106">Exchange</text><text x="1070" y="106">Use the page</text>
+    </g>
+    <g fill="#B6CCDE" font-size="21">
+      <text x="110" y="153">A local connection</text><text x="350" y="153">An address + help</text><text x="590" y="153">A name + a route</text><text x="830" y="153">A request + reply</text><text x="1070" y="153">Display + behavior</text>
+    </g>
+    <g stroke="#B6CCDE" stroke-width="3" marker-end="url(#deck-s4-g1-journey-arrow)">
+      <path d="M214 128 H242"/><path d="M454 128 H482"/><path d="M694 128 H722"/><path d="M934 128 H962"/>
+    </g>
+  </g>
+</svg></div><figcaption>A fresh visit, grouped into five stages. Later slides unpack the jobs inside each stage.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="5" data-title="Four words about where your request goes" aria-label="Slide 5: Four words about where your request goes">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>5</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about where your request goes</h1>
+<div class="table-wrap"><table><thead><tr><th>Word</th><th>What it means, in one sentence</th></tr></thead><tbody><tr><td>Network</td><td>A set of connected devices that can send messages to each other.</td></tr><tr><td>The Internet</td><td>An enormous collection of networks that agreed to pass each other&#39;s messages.</td></tr><tr><td>IP address</td><td>The numeric address a device uses on a network, so replies can find their way back.</td></tr><tr><td>Gateway (router)</td><td>The device on your network that forwards traffic to destinations outside it.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>These words name the route a request takes: your computer starts on one network, and its gateway sends it toward another.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="6" data-title="Four words about what your request asks for" aria-label="Slide 6: Four words about what your request asks for">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>6</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about what your request asks for</h1>
+<div class="table-wrap"><table><thead><tr><th>Word</th><th>What it means, in one sentence</th></tr></thead><tbody><tr><td>Domain name</td><td>The human-friendly name of a site, such as <code>www.depaul.edu</code>.</td></tr><tr><td>Client and server</td><td>The client asks for something (your browser); the server answers (the website&#39;s computer).</td></tr><tr><td>HTTP / HTTPS</td><td>The rules browsers and servers use to ask for and return pages. HTTPS is the private version.</td></tr><tr><td>Resource</td><td>Any single item a page is made of: the page text, an image, a font, a stylesheet.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>None of these words describe <em>how</em> anything works yet. They are labels for the parts, so the story below has names to use.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="7" data-title="1. Join a local network" aria-label="Slide 7: 1. Join a local network">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>7</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>1. Join a local network</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>&quot;Connected to Wi-Fi&quot; means a local connection exists. It does not prove the website works.</p>
+</aside><div class="cols"><div class="col"><h3>On the computer</h3>
+<ul>
+<li>Choose Wi-Fi, or connect a network cable</li>
+<li>The network adapter establishes a local connection</li>
+<li>Supply a password or sign-in if required</li>
+</ul>
+</div><div class="col"><h3>On the local network</h3>
+<ul>
+<li>An access point or switch connects the device</li>
+<li>Network policy decides what access is permitted</li>
+<li>Some networks require an additional sign-in page</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="8" data-title="2. The computer gets its bearings" aria-label="Slide 8: 2. The computer gets its bearings">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>8</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>2. The computer gets its bearings</h1>
+<p><strong>A local connection still needs usable network settings.</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Information</th><th>The question it answers</th></tr></thead><tbody><tr><td>This device&#39;s address</td><td>Where should replies go?</td></tr><tr><td>Local destinations</td><td>Which neighbors can I reach directly?</td></tr><tr><td>Default gateway</td><td>Who helps me reach other networks?</td></tr><tr><td>Name-lookup service</td><td>Who helps find the website&#39;s address?</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>&quot;Settings&quot; here means four answers your computer needs before it can talk to anything: who it is, who is nearby, who forwards its traffic outward, and who translates names into addresses.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="9" data-title="3. Tell the browser where you want to go" aria-label="Slide 9: 3. Tell the browser where you want to go">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>9</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>3. Tell the browser where you want to go</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 320" role="img" aria-label="Browser address bar showing https://www.depaul.edu, with labels for a private web visit, the site name, and the home page">
+  <g font-family="Arial, sans-serif">
+    <rect x="28" y="20" width="1124" height="90" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <text x="70" y="78" font-size="38" fill="#F3F8FC">https://www.depaul.edu</text>
+    <rect x="28" y="154" width="342" height="125" rx="12" fill="#102C40" stroke="#5B82A6"/>
+    <rect x="418" y="154" width="342" height="125" rx="12" fill="#102C40" stroke="#5B82A6"/>
+    <rect x="808" y="154" width="344" height="125" rx="12" fill="#102C40" stroke="#5B82A6"/>
+    <g font-size="27" font-weight="700" fill="#5EEAD4" text-anchor="middle">
+      <text x="199" y="199">https</text><text x="589" y="199">www.depaul.edu</text><text x="980" y="199">No page path entered</text>
+    </g>
+    <g font-size="23" fill="#B6CCDE" text-anchor="middle">
+      <text x="199" y="244">A private web conversation</text><text x="589" y="244">The site we want</text><text x="980" y="244">Start at the home page</text>
+    </g>
+  </g>
+</svg>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>That whole line is a <strong>URL</strong> — a web address. It names the rules to use (<code>https</code>), the site to talk to (<code>www.depaul.edu</code>), and optionally which page (nothing here, so: the home page).</p>
+</aside></div><figcaption>The browser interprets the address before asking for the page.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="10" data-title="4. Find an address for the name" aria-label="Slide 10: 4. Find an address for the name">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>10</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>4. Find an address for the name</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The name-lookup service is called <strong>DNS</strong>, the Domain Name System: a directory that turns a name people can remember into an address machines can use. Looking up the address is not the same job as downloading the page.</p>
+</aside><div class="cols"><div class="col"><h3>The computer asks</h3>
+<ul>
+<li>The human-friendly name is <code>www.depaul.edu</code></li>
+<li>Communication needs a network destination</li>
+<li>The browser or operating system may already know a usable answer</li>
+</ul>
+</div><div class="col"><h3>A lookup service helps</h3>
+<ul>
+<li>If needed, it finds an address for the name</li>
+<li>There may be more than one usable address</li>
+<li>Answers can change while the familiar name stays the same</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="11" data-title="5. Get from the laptop to the way out" aria-label="Slide 11: 5. Get from the laptop to the way out">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>11</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>5. Get from the laptop to the way out</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 320" role="img" aria-label="A laptop sends traffic through a local access point or switch to a gateway, which connects to the wider Internet">
+  <defs><marker id="deck-s11-g1-local-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5EEAD4"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="20" y="70" width="230" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="325" y="70" width="230" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="630" y="70" width="230" height="140" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="935" y="70" width="225" height="140" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <g font-size="25" font-weight="700" fill="#F3F8FC">
+      <text x="135" y="120">Laptop</text><text x="440" y="120">Local connection</text><text x="745" y="120">Gateway</text><text x="1047" y="120">Internet</text>
+    </g>
+    <g font-size="21" fill="#B6CCDE">
+      <text x="135" y="166">Browser and OS</text><text x="440" y="166">Access point or switch</text><text x="745" y="166">The way out</text><text x="1047" y="166">Other networks</text>
+    </g>
+    <g stroke="#5EEAD4" stroke-width="3" marker-end="url(#deck-s11-g1-local-arrow)">
+      <path d="M255 142 H315"/><path d="M560 142 H620"/><path d="M865 142 H925"/>
+    </g>
+    <text x="590" y="272" font-size="24" fill="#B6CCDE">One physical box can perform more than one of these jobs.</text>
+  </g>
+</svg></div><figcaption>For a remote website, the computer hands outgoing traffic to a local gateway.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--table has-sources" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="12" data-title="6. Networks carry the conversation" aria-label="Slide 12: 6. Networks carry the conversation">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>12</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>6. Networks carry the conversation</h1>
+<p><strong>One visit crosses several networks, not a direct wire.</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Part of the path</th><th>Its job</th></tr></thead><tbody><tr><td>Local network</td><td>Carry traffic to the way out</td></tr><tr><td>Gateway</td><td>Cross the network boundary and route replies</td></tr><tr><td>Internet routers</td><td>Forward toward the destination</td></tr><tr><td>Website&#39;s network</td><td>Deliver traffic to the web service</td></tr></tbody></table></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>MDN — <a href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/How_does_the_Internet_work">How does the Internet work?</a></li></ul></div>
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="13" data-title="7–8. Start a conversation, then ask" aria-label="Slide 13: 7–8. Start a conversation, then ask">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>13</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>7–8. Start a conversation, then ask</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Being able to talk to the site and asking for a particular page are different steps. <strong>HTTPS</strong> means the conversation is scrambled in transit, so people between you and the site can see that you are talking to it, but not what you sent.</p>
+</aside><div class="cols"><div class="col"><h3>Get ready to talk</h3>
+<ul>
+<li>The browser reaches a service for the website</li>
+<li>For this HTTPS visit, it prepares a private conversation with the intended site</li>
+<li>A previously established conversation may be reusable</li>
+</ul>
+</div><div class="col"><h3>Ask for the page</h3>
+<ul>
+<li>The browser requests the site&#39;s home page</li>
+<li>It can include context such as a language preference or a previous visit</li>
+<li>The service decides how to answer</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="14" data-title="9. The website's front door decides" aria-label="Slide 14: 9. The website's front door decides">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>14</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>9. The website&#39;s front door decides</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 340" role="img" aria-label="A website front door receives a page request and may return a saved copy or ask the application to produce a response">
+  <defs><marker id="deck-s14-g1-site-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="20" y="110" width="250" height="110" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="375" y="110" width="320" height="110" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="835" y="35" width="320" height="110" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <rect x="835" y="220" width="320" height="110" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <g font-size="29" fill="#F3F8FC" font-weight="700">
+      <text x="145" y="158">Page request</text><text x="535" y="158">Website front door</text><text x="995" y="82">Saved copy</text><text x="995" y="267">Application</text>
+    </g>
+    <g font-size="22" fill="#B6CCDE">
+      <text x="145" y="192">From the visitor</text><text x="535" y="192">Choose a response</text><text x="995" y="117">When reuse is allowed</text><text x="995" y="302">When work is needed</text>
+    </g>
+    <g stroke="#B6CCDE" stroke-width="3" fill="none" marker-end="url(#deck-s14-g1-site-arrow)">
+      <path d="M275 166 H365"/><path d="M700 150 L825 90"/><path d="M700 184 L825 274"/>
+    </g>
+  </g>
+</svg></div><figcaption>An illustrative website architecture, not a verified diagram of DePaul's current deployment.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="15" data-title="10. The application may need information" aria-label="Slide 15: 10. The application may need information">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>15</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>10. The application may need information</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The browser normally talks to the web service, not directly to the service&#39;s private database.</p>
+</aside><div class="cols"><div class="col"><h3>A ready-made page</h3>
+<ul>
+<li>Content may already exist as a file</li>
+<li>The service can return it without assembling new information</li>
+<li>Not every visit requires a database query</li>
+</ul>
+</div><div class="col"><h3>A page assembled for a request</h3>
+<ul>
+<li>The application may read stored content or another service</li>
+<li>It may check what the visitor is allowed to see</li>
+<li>It creates a response for the browser</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="16" data-title="11. A response makes the return trip" aria-label="Slide 16: 11. A response makes the return trip">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>16</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>11. A response makes the return trip</h1>
+<p><strong>A delivered response is not yet a usable page.</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Participant</th><th>Next job</th></tr></thead><tbody><tr><td>Web service</td><td>Send content, a new location, or a problem</td></tr><tr><td>Return-path networks</td><td>Carry the response back</td></tr><tr><td>Local network and computer</td><td>Deliver to the right device and application</td></tr><tr><td>Browser</td><td>Decide what to do with the response</td></tr></tbody></table></div></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="17" data-title="12. Request the other pieces" aria-label="Slide 17: 12. Request the other pieces">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>17</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>12. Request the other pieces</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The first response is not necessarily the whole page. One visit can involve many requests. A <strong>saved copy</strong> — a cache — is a local copy kept from an earlier visit so the same item does not have to be fetched twice.</p>
+</aside><div class="cols"><div class="col"><h3>The page can ask for more</h3>
+<ul>
+<li>Images and fonts</li>
+<li>Appearance rules and application code</li>
+<li>Fresh information needed by the page</li>
+</ul>
+</div><div class="col"><h3>Earlier jobs can happen again</h3>
+<ul>
+<li>Another resource may be on another service</li>
+<li>Some resources can be reused from saved copies</li>
+<li>Several requests can be in progress together</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="18" data-title="13. The browser makes the page" aria-label="Slide 18: 13. The browser makes the page">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>18</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>13. The browser makes the page</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 310" role="img" aria-label="Page structure, appearance, images, and behavior feed into the browser to produce the visible usable page">
+  <defs><marker id="deck-s18-g1-page-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <g fill="#17364E" stroke="#5B82A6" stroke-width="2">
+      <rect x="25" y="20" width="235" height="105" rx="12"/><rect x="300" y="20" width="235" height="105" rx="12"/>
+      <rect x="25" y="180" width="235" height="105" rx="12"/><rect x="300" y="180" width="235" height="105" rx="12"/>
+    </g>
+    <g font-size="27" fill="#5EEAD4" font-weight="700">
+      <text x="142" y="65">Structure</text><text x="417" y="65">Appearance</text><text x="142" y="225">Images</text><text x="417" y="225">Behavior</text>
+    </g>
+    <g font-size="22" fill="#B6CCDE">
+      <text x="142" y="103">What is on the page</text><text x="417" y="103">How it looks</text><text x="142" y="263">Visual content</text><text x="417" y="263">What interactions do</text>
+    </g>
+    <path d="M555 152 H680" stroke="#B6CCDE" stroke-width="4" marker-end="url(#deck-s18-g1-page-arrow)"/>
+    <rect x="715" y="40" width="435" height="230" rx="16" fill="#102C40" stroke="#FCD34D" stroke-width="3"/>
+    <rect x="740" y="66" width="385" height="33" rx="5" fill="#17364E"/>
+    <rect x="740" y="122" width="130" height="110" rx="5" fill="#214867"/>
+    <path d="M895 130 H1110 M895 158 H1110 M895 186 H1070" stroke="#B6CCDE" stroke-width="10"/>
+    <text x="932" y="300" font-size="24" fill="#F3F8FC">A page you can see and use</text>
+  </g>
+</svg>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>These four jobs have names you will use for ten weeks: <strong>HTML</strong> is the structure, <strong>CSS</strong> is the appearance, images are the media, and <strong>JavaScript</strong> is the behavior. The browser combines them into the page you see.</p>
+</aside></div><figcaption>The browser turns received resources into a page. Work can overlap as resources arrive.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="19" data-title="14. Visible is not always ready to use" aria-label="Slide 19: 14. Visible is not always ready to use">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>19</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>14. Visible is not always ready to use</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Our destination is a usable experience, not just a successful connection.</p>
+</aside><div class="cols"><div class="col"><h3>Something is on the screen</h3>
+<ul>
+<li>Text and a logo may already be visible</li>
+<li>Some work may still be in progress</li>
+<li>Appearance alone does not prove every feature works</li>
+</ul>
+</div><div class="col"><h3>The visitor can do the job</h3>
+<ul>
+<li>Links and controls respond</li>
+<li>Needed information is available</li>
+<li>An action may start another request-and-response cycle</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="20" data-title="Three milestones, not one checkbox" aria-label="Slide 20: Three milestones, not one checkbox">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>20</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>Three milestones, not one checkbox</h1>
+<div class="table-wrap"><table><thead><tr><th>What the student observes</th><th>What it establishes</th><th>What it does not establish</th></tr></thead><tbody><tr><td>Wi-Fi says connected</td><td>A local connection</td><td>Access to every Internet destination</td></tr><tr><td>Another website opens</td><td>At least one usable path and service</td><td>DePaul&#39;s site is available</td></tr><tr><td>DePaul&#39;s home page appears</td><td>Enough work completed to display it</td><td>Every link and feature is usable</td></tr></tbody></table></div></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="21" data-title="Mac or Windows: the same jobs" aria-label="Slide 21: Mac or Windows: the same jobs">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>21</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><h1>Mac or Windows: the same jobs</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Later examples include Windows PowerShell and macOS Terminal (zsh or bash). Follow your OS, not both.</p>
+</aside><div class="cols"><div class="col"><h3>What stays the same</h3>
+<ul>
+<li>Join and configure a network connection</li>
+<li>Find and communicate with the site</li>
+<li>Receive resources, display a page, and respond to the user</li>
+</ul>
+</div><div class="col"><h3>What can look different</h3>
+<ul>
+<li>Settings screens and permission prompts</li>
+<li>Terminal commands and diagnostic output</li>
+<li>Browser menus and developer tools</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--quote" data-layout="quote" data-phase="content" data-source-block="A" data-source-slide="22" data-title="" aria-label="Slide 22: quote">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>22</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><blockquote>From 'I can visit a website' to 'I can explain and operate what makes a web application work.'</blockquote><p class="attrib">— The course destination</p></div></div>
+
+
+</section>
+<section class="slide slide--checkpoint" data-layout="checkpoint" data-phase="content" data-source-block="A" data-source-slide="23" data-title="Tell the story without the tools" aria-label="Slide 23: Tell the story without the tools">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>23</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><p class="cp-banner"><span aria-hidden="true">◇</span> Active checkpoint</p>
+<h1>Tell the story without the tools</h1>
+
+<div class="cp-meta"><span><b>10 min</b></span><span>Solo (3 min) → self-check against the model map (4 min) → instructor debrief (3 min)</span></div>
+<ol>
+<li>Draw the journey from joining Wi-Fi to using DePaul&#39;s home page. Include the computer, local network, Internet, and website.</li>
+<li>Mark one job before the page request and one job after the first response arrives.</li>
+<li>Why can &quot;Wi-Fi connected&quot; be true while the page is not usable?</li>
+</ol>
+</div></div>
+
+
+</section>
+<section class="slide slide--section" data-layout="section" data-phase="handoff" data-source-block="A" data-source-slide="24" data-title="Continue with Blocks B and C" aria-label="Slide 24: Continue with Blocks B and C">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;Continue with B/C</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>24</b> / 24</span></div>
+<div class="slide-body"><div class="fit"><div class="rule-accent" aria-hidden="true"></div><h1>Continue with Blocks B and C</h1>
+</div></div>
+
+
+</section>
+</main>
+
+<div id="deck" data-deck-id="week01-blockA" data-kind="block" data-minutes="30" hidden></div>
+<div class="f-progress" aria-hidden="true"><i id="progress"></i></div>
+
+<div class="overlay" id="presenter" aria-hidden="true" aria-label="Presenter view">
+  <div class="pv-grid">
+    <div class="pv-bar">
+      <span class="pv-clock" id="pv-clock">00:00</span>
+      <button class="pv-btn" id="pv-toggle" type="button">Start timer</button>
+      <button class="pv-btn" id="pv-reset" type="button">Reset</button>
+      <span class="pv-pos" id="pv-pos"></span>
+      <span class="pv-pos" id="pv-pace"></span>
+      <span class="pv-hint">Budget 30 min · P to close · Esc to exit</span>
+      <button class="pv-btn" id="pv-close" type="button">Close</button>
+    </div>
+    <div class="pv-left">
+      <span class="pv-cap">Now</span>
+      <div class="pv-thumb" id="pv-now"></div>
+      <span class="pv-cap">Next</span>
+      <div class="pv-thumb" id="pv-next"></div>
+    </div>
+    <div class="pv-right">
+      <span class="pv-cap">Speaker notes</span>
+      <div class="pv-notes" id="pv-notes"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overview" aria-hidden="true" aria-label="Slide overview">
+  <h2>Overview — From network to web page</h2>
+  <div class="ov-grid" id="ov-grid"></div>
+</div>
+
+<div class="overlay" id="help" aria-hidden="true" aria-label="Keyboard help">
+  <h2>Keyboard</h2>
+  <table><tr><td><kbd>→ / Space / N</kbd></td><td>Next slide</td></tr><tr><td><kbd>← / Page Up</kbd></td><td>Previous slide</td></tr><tr><td><kbd>Home / End</kbd></td><td>First / last slide</td></tr><tr><td><kbd>P</kbd></td><td>Presenter view — notes, timer, next slide</td></tr><tr><td><kbd>T / R</kbd></td><td>Start-pause timer / reset timer (in presenter view)</td></tr><tr><td><kbd>O</kbd></td><td>Slide overview grid</td></tr><tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr><tr><td><kbd>B or .</kbd></td><td>Blackout the screen</td></tr><tr><td><kbd>Ctrl+P</kbd></td><td>Print — one slide per page, light handout palette</td></tr><tr><td><kbd>? or H</kbd></td><td>This help</td></tr><tr><td><kbd>Esc</kbd></td><td>Close overlays</td></tr></table>
+</div>
+
+<script>
+/* ============================================================================
+   CSC 436 — deck runtime
+   ----------------------------------------------------------------------------
+   Shared theme asset. Inlined into every generated HTML deck at build time.
+   No external dependencies, no network access: the decks must present from a
+   USB stick in a lecture hall with no wifi.
+
+   Storage keys are namespaced per deck (`csc436:<deckId>:*`) because every
+   deck opened from file:// shares one opaque origin — an unnamespaced key
+   would let Week 2's timer clobber Week 1's.
+   ========================================================================== */
+
+(function () {
+  "use strict";
+
+  var deck = document.getElementById("deck");
+  if (!deck) return;
+
+  var DECK_ID = deck.getAttribute("data-deck-id") || "deck";
+  var NS = "csc436:" + DECK_ID + ":";
+  var BUDGET_MIN = Number(deck.getAttribute("data-minutes")) || 0;
+  var IS_SESSION = deck.getAttribute("data-kind") === "session";
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll("#stage .slide"));
+  var total = slides.length;
+  var current = 0;
+
+  /* ------------------------------------------------------------- storage -- */
+
+  function store(key, value) {
+    try { window.localStorage.setItem(NS + key, String(value)); } catch (e) { /* file:// may deny */ }
+  }
+  function recall(key) {
+    try { return window.localStorage.getItem(NS + key); } catch (e) { return null; }
+  }
+
+  /* --------------------------------------------------------------- scale -- */
+
+  function fit() {
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    document.documentElement.style.setProperty("--k", String(k));
+    scaleThumbs();
+  }
+
+  function scaleThumbs() {
+    var thumbs = document.querySelectorAll(".pv-thumb, .ov-cell");
+    for (var i = 0; i < thumbs.length; i++) {
+      var inner = thumbs[i].querySelector(".pv-thumb-inner");
+      if (!inner) continue;
+      var w = thumbs[i].clientWidth;
+      var h = thumbs[i].clientHeight;
+      var k = Math.min(w / 1280, h / 720) || w / 1280;
+      var dx = (w - 1280 * k) / 2;
+      var dy = (h - 720 * k) / 2;
+      inner.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + k + ")";
+    }
+  }
+
+  /* ---------------------------------------------------------- navigation -- */
+
+  function show(index, push) {
+    index = Math.max(0, Math.min(total - 1, index));
+    if (slides[current]) slides[current].classList.remove("is-active");
+    current = index;
+    slides[current].classList.add("is-active");
+
+    var bar = document.getElementById("progress");
+    if (bar) bar.style.width = (total <= 1 ? 100 : (current / (total - 1)) * 100) + "%";
+
+    if (push !== false) {
+      var hash = "#/" + (current + 1);
+      if (window.location.hash !== hash) {
+        try { history.replaceState(null, "", hash); }
+        catch (e) { window.location.hash = hash; }
+      }
+    }
+
+    store("slide", current + 1);
+    if (live) live.textContent = "Slide " + (current + 1) + " of " + total + ". " + (slides[current].getAttribute("data-title") || "");
+    renderPresenter();
+    syncOverview();
+  }
+
+  function next() { if (current < total - 1) show(current + 1); }
+  function prev() { if (current > 0) show(current - 1); }
+
+  function fromHash() {
+    var m = /^#\/(\d+)$/.exec(window.location.hash || "");
+    if (m) {
+      var n = parseInt(m[1], 10) - 1;
+      if (n >= 0 && n < total) return n;
+    }
+    return null;
+  }
+
+  /* ------------------------------------------------------------ overlays -- */
+
+  function overlay(id) { return document.getElementById(id); }
+
+  function isOpen(id) {
+    var el = overlay(id);
+    return !!(el && el.classList.contains("is-open"));
+  }
+
+  function toggle(id, on) {
+    var el = overlay(id);
+    if (!el) return;
+    var open = typeof on === "boolean" ? on : !el.classList.contains("is-open");
+    el.classList.toggle("is-open", open);
+    el.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open && id === "presenter") renderPresenter();
+    if (open && id === "overview") buildOverview();
+    scaleThumbs();
+  }
+
+  function closeAll() {
+    toggle("help", false);
+    toggle("presenter", false);
+    toggle("overview", false);
+  }
+
+  /* ----------------------------------------------------------- presenter -- */
+
+  var timerStart = null;
+  var timerElapsed = 0;
+  var timerRunning = false;
+
+  function fmt(ms) {
+    var s = Math.floor(ms / 1000);
+    var sign = s < 0 ? "-" : "";
+    s = Math.abs(s);
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return sign + (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  function timerMs() {
+    return timerElapsed + (timerRunning && timerStart ? Date.now() - timerStart : 0);
+  }
+
+  function tick() {
+    var clock = document.getElementById("pv-clock");
+    if (!clock) return;
+    var ms = timerMs();
+    clock.textContent = fmt(ms);
+    clock.classList.toggle("is-over", BUDGET_MIN > 0 && ms > BUDGET_MIN * 60000);
+    var pace = document.getElementById("pv-pace");
+    if (pace && IS_SESSION) {
+      pace.textContent = "Follow the timed session plan";
+    } else if (pace && BUDGET_MIN > 0) {
+      var expected = total > 1 ? (current / (total - 1)) * BUDGET_MIN * 60000 : 0;
+      var delta = ms - expected;
+      pace.textContent = Math.abs(delta) < 20000
+        ? "on pace"
+        : (delta > 0 ? fmt(delta) + " behind" : fmt(-delta) + " ahead");
+    }
+  }
+
+  function toggleTimer() {
+    if (timerRunning) { timerElapsed = timerMs(); timerRunning = false; timerStart = null; }
+    else { timerStart = Date.now(); timerRunning = true; }
+    var btn = document.getElementById("pv-toggle");
+    if (btn) btn.textContent = timerRunning ? "Pause timer" : "Start timer";
+    tick();
+  }
+
+  function resetTimer() {
+    timerElapsed = 0;
+    timerStart = timerRunning ? Date.now() : null;
+    tick();
+  }
+
+  function thumbInto(host, index) {
+    host.innerHTML = "";
+    var inner = document.createElement("div");
+    inner.className = "pv-thumb-inner";
+    if (slides[index]) {
+      var clone = slides[index].cloneNode(true);
+      clone.classList.add("is-active");
+      clone.removeAttribute("id");
+      inner.appendChild(clone);
+    }
+    host.appendChild(inner);
+    var w = host.clientWidth;
+    var h = host.clientHeight;
+    var k = Math.min(w / 1280, h / 720) || w / 1280;
+    inner.style.transform = "translate(" + ((w - 1280 * k) / 2) + "px," + ((h - 720 * k) / 2) + "px) scale(" + k + ")";
+  }
+
+  function renderPresenter() {
+    if (!isOpen("presenter")) return;
+
+    thumbInto(document.getElementById("pv-now"), current);
+    var nextHost = document.getElementById("pv-next");
+    if (current + 1 < total) thumbInto(nextHost, current + 1);
+    else nextHost.innerHTML = '<div class="pv-thumb-inner"></div>';
+
+    var notes = document.getElementById("pv-notes");
+    var src = slides[current].querySelector(".notes-src");
+    notes.innerHTML = src ? src.innerHTML : '<p class="empty">No speaker notes on this slide.</p>';
+
+    var pos = document.getElementById("pv-pos");
+    if (pos) pos.textContent = "Slide " + (current + 1) + " / " + total;
+    tick();
+  }
+
+  /* ------------------------------------------------------------ overview -- */
+
+  var overviewBuilt = false;
+
+  function buildOverview() {
+    if (overviewBuilt) { syncOverview(); return; }
+    var grid = document.getElementById("ov-grid");
+    if (!grid) return;
+    for (var i = 0; i < total; i++) {
+      (function (i) {
+        var cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "ov-cell";
+        cell.setAttribute("aria-label", "Go to slide " + (i + 1) + ": " + (slides[i].getAttribute("data-title") || ""));
+        var inner = document.createElement("div");
+        inner.className = "pv-thumb-inner";
+        var clone = slides[i].cloneNode(true);
+        clone.classList.add("is-active");
+        clone.removeAttribute("id");
+        inner.appendChild(clone);
+        cell.appendChild(inner);
+        var num = document.createElement("span");
+        num.className = "ov-num";
+        num.textContent = String(i + 1);
+        cell.appendChild(num);
+        cell.addEventListener("click", function () { show(i); toggle("overview", false); });
+        grid.appendChild(cell);
+      })(i);
+    }
+    overviewBuilt = true;
+    scaleThumbs();
+    syncOverview();
+  }
+
+  function syncOverview() {
+    var cells = document.querySelectorAll(".ov-cell");
+    for (var i = 0; i < cells.length; i++) cells[i].classList.toggle("is-current", i === current);
+  }
+
+  /* -------------------------------------------------------------- events -- */
+
+  var live = document.getElementById("live");
+
+  document.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+    switch (e.key) {
+      case "ArrowRight": case "PageDown": case " ": case "Spacebar": case "n":
+        e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp":
+        e.preventDefault(); prev(); break;
+      case "ArrowDown": e.preventDefault(); next(); break;
+      case "ArrowUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); show(0); break;
+      case "End": e.preventDefault(); show(total - 1); break;
+      case "Escape": closeAll(); document.body.classList.remove("is-blacked"); break;
+      default: break;
+    }
+
+    var k = e.key.toLowerCase();
+    if (k === "p") { e.preventDefault(); toggle("presenter"); }
+    else if (k === "o") { e.preventDefault(); toggle("overview"); }
+    else if (k === "b" || k === ".") { e.preventDefault(); document.body.classList.toggle("is-blacked"); }
+    else if (k === "t") { e.preventDefault(); toggleTimer(); }
+    else if (k === "r" && isOpen("presenter")) { e.preventDefault(); resetTimer(); }
+    else if (k === "f") {
+      e.preventDefault();
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    }
+    else if (e.key === "?" || (e.key === "/" && e.shiftKey) || k === "h") { e.preventDefault(); toggle("help"); }
+  });
+
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest(".overlay, a, button")) return;
+    if (isOpen("presenter") || isOpen("overview") || isOpen("help")) return;
+    next();
+  });
+
+  var touchX = null, touchY = null;
+  document.addEventListener("touchstart", function (e) {
+    if (e.changedTouches.length !== 1) return;
+    touchX = e.changedTouches[0].clientX;
+    touchY = e.changedTouches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener("touchend", function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    var dy = e.changedTouches[0].clientY - touchY;
+    touchX = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) { if (dx < 0) next(); else prev(); }
+  }, { passive: true });
+
+  window.addEventListener("resize", fit);
+  window.addEventListener("beforeprint", fitAll);
+  window.addEventListener("hashchange", function () {
+    var n = fromHash();
+    if (n !== null && n !== current) show(n, false);
+  });
+
+  var toggleBtn = document.getElementById("pv-toggle");
+  if (toggleBtn) toggleBtn.addEventListener("click", toggleTimer);
+  var resetBtn = document.getElementById("pv-reset");
+  if (resetBtn) resetBtn.addEventListener("click", resetTimer);
+  var closeBtn = document.getElementById("pv-close");
+  if (closeBtn) closeBtn.addEventListener("click", function () { toggle("presenter", false); });
+
+  /* ------------------------------------------------------- shrink to fit -- */
+
+  /**
+   * Last-resort containment. `--check` warns an author when a slide is over
+   * capacity, but a deck must never spill off the bottom in front of a room,
+   * so every slide is measured after layout and its content zoomed down until
+   * it fits. Zoom (not transform) is used because it reflows: text rewraps
+   * instead of being squashed.
+   *
+   * Overflow is measured from laid-out geometry rather than scrollHeight,
+   * because an inline <svg> with a viewBox reports its intrinsic height as
+   * scrollHeight even when it has been scaled down to fit its frame — which
+   * would otherwise make every diagram slide look permanently overfull.
+   */
+  var supportsZoom = (function () {
+    var probe = document.createElement("div");
+    probe.style.zoom = "0.5";
+    return probe.style.zoom !== "";
+  })();
+
+  function overflowOf(box, fit) {
+    var limit = box.getBoundingClientRect().bottom;
+    var lowest = 0;
+    var descendants = fit.querySelectorAll("*");
+    for (var i = 0; i < descendants.length; i++) {
+      var bottom = descendants[i].getBoundingClientRect().bottom;
+      if (bottom > lowest) lowest = bottom;
+    }
+    return lowest - limit;
+  }
+
+  function fitOne(slide) {
+    var box = slide.querySelector(".slide-body");
+    var fit = slide.querySelector(".fit");
+    if (!box || !fit || fit.children.length === 0) return;
+
+    if (supportsZoom) fit.style.zoom = "";
+    else fit.style.transform = "";
+    fit.removeAttribute("data-fitted");
+
+    if (overflowOf(box, fit) <= 1) return;
+
+    var z = 1;
+    for (var i = 0; i < 16; i++) {
+      z -= 0.035;
+      if (z < 0.62) break;
+      if (supportsZoom) {
+        fit.style.zoom = String(z);
+      } else {
+        fit.style.transform = "scale(" + z + ")";
+        fit.style.transformOrigin = "top left";
+        fit.style.width = (100 / z) + "%";
+      }
+      if (overflowOf(box, fit) <= 1) break;
+    }
+    fit.setAttribute("data-fitted", z.toFixed(2));
+  }
+
+  function fitAll() {
+    for (var i = 0; i < slides.length; i++) {
+      var wasActive = slides[i].classList.contains("is-active");
+      if (!wasActive) slides[i].style.display = "block";
+      fitOne(slides[i]);
+      if (!wasActive) slides[i].style.display = "";
+    }
+  }
+
+  /* ---------------------------------------------------------------- boot -- */
+
+  fit();
+  fitAll();
+  setInterval(function () { if (isOpen("presenter")) tick(); }, 500);
+
+  var start = fromHash();
+  if (start === null) {
+    var remembered = parseInt(recall("slide") || "1", 10);
+    start = remembered > 0 && remembered <= total ? remembered - 1 : 0;
+  }
+  show(start);
+})();
+
+</script>
+</body>
+</html>

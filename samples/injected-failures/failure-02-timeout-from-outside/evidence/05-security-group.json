@@ -1,0 +1,42 @@
+{
+  "_comment": "Exported inbound rules for the network security group attached to campuspulse-demo. Constructed teaching artifact; addresses are RFC 5737 documentation ranges.",
+  "name": "campuspulse-demo-nsg",
+  "attachedTo": ["vm/campuspulse-demo", "nic/campuspulse-demo-nic0"],
+  "exportedAt": "2026-08-16T08:47:00Z",
+  "defaultInboundAction": "Deny",
+  "denyBehavior": "drop",
+  "_denyBehaviorNote": "Denied packets are discarded silently. No RST and no ICMP administratively-prohibited message is returned to the sender.",
+  "inboundRules": [
+    {
+      "priority": 100,
+      "name": "allow-ssh",
+      "protocol": "Tcp",
+      "sourceAddressPrefix": "*",
+      "destinationPortRange": "22",
+      "access": "Allow"
+    },
+    {
+      "priority": 4096,
+      "name": "DenyAllInBound",
+      "protocol": "*",
+      "sourceAddressPrefix": "*",
+      "destinationPortRange": "*",
+      "access": "Deny"
+    }
+  ],
+  "changeHistory": [
+    {
+      "at": "2026-07-02T14:22:10Z",
+      "actor": "marcus@campuspulse-demo",
+      "change": "created nsg with rules: allow-ssh (Tcp/22), allow-https (Tcp/443)"
+    },
+    {
+      "at": "2026-08-13T22:41:55Z",
+      "actor": "platform-automation",
+      "change": "removed rule 'allow-https' (Tcp/443)",
+      "reason": "org policy PLAT-114: public HTTPS ingress must terminate at the shared application gateway, not directly on a VM network interface",
+      "notificationSentTo": "campuspulse-owners@example.edu",
+      "acknowledged": false
+    }
+  ]
+}

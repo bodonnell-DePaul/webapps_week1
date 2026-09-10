@@ -1,0 +1,220 @@
+CSC 436 — Week 1 — Where am I on the network?
+Real output. Captured 2026-08-15 on a cloud-hosted Windows desktop. Sanitised per
+samples/README.md. Annotations are the '#' lines; they are not part of the output.
+================================================================================
+
+$ ipconfig /all
+
+Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : CPC-REDACTED
+   Primary Dns Suffix  . . . . . . . :
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No          # this host does not forward
+   WINS Proxy Enabled. . . . . . . . : No
+
+Ethernet adapter Ethernet 4:
+
+   Connection-specific DNS Suffix  . : reddog.microsoft.com
+   Description . . . . . . . . . . . : Microsoft Hyper-V Network Adapter #3
+   Physical Address. . . . . . . . . : 00-0D-3A-XX-XX-XX        # <-- 1. LAYER 2
+   DHCP Enabled. . . . . . . . . . . : Yes                      # <-- 2. HOW I GOT THIS
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::[iid-redacted]%26  # <-- 3. IPv6, unrouted
+   IPv4 Address. . . . . . . . . . . : 10.0.20.252(Preferred)   # <-- 4. WHO I AM
+   Subnet Mask . . . . . . . . . . . : 255.255.128.0            # <-- 5. WHO IS "NEARBY"
+   Lease Obtained. . . . . . . . . . : Saturday, August 15, 2026 11:06:05 AM
+   Lease Expires . . . . . . . . . . : Tuesday, September 21, 2162 9:18:27 PM
+   Default Gateway . . . . . . . . . : 10.0.0.1                 # <-- 6. WAY OUT
+   DHCP Server . . . . . . . . . . . : 168.63.129.16            # <-- 7. WHO ANSWERED
+   DHCPv6 IAID . . . . . . . . . . . : 251661626
+   DHCPv6 Client DUID. . . . . . . . : 00-01-01-00-XX-XX-XX-XX-00-0D-3A-XX-XX-XX
+   DNS Servers . . . . . . . . . . . : 10.0.254.4               # <-- 8. WHO ANSWERS NAMES
+   NetBIOS over Tcpip. . . . . . . . : Enabled
+
+Ethernet adapter vEthernet (Default Switch):
+
+   Description . . . . . . . . . . . : Hyper-V Virtual Ethernet Adapter
+   Physical Address. . . . . . . . . : 00-15-5D-XX-XX-XX
+   DHCP Enabled. . . . . . . . . . . : No
+   IPv4 Address. . . . . . . . . . . : 172.24.192.1(Preferred)  # <-- 9. VIRTUAL
+   Subnet Mask . . . . . . . . . . . : 255.255.240.0
+   Default Gateway . . . . . . . . . :                          # no gateway: local only
+
+Ethernet adapter vEthernet (WSL (Hyper-V firewall)):
+
+   Description . . . . . . . . . . . : Hyper-V Virtual Ethernet Adapter #2
+   Physical Address. . . . . . . . . : 00-15-5D-XX-XX-XX
+   DHCP Enabled. . . . . . . . . . . : No
+   IPv4 Address. . . . . . . . . . . : 172.21.16.1(Preferred)
+   Subnet Mask . . . . . . . . . . . : 255.255.240.0
+   Default Gateway . . . . . . . . . :
+
+================================================================================
+READING IT
+================================================================================
+
+1. LAYER 2 — the MAC address
+   48 bits burned into (or assigned to) the adapter. It is how a frame finds this
+   machine on *this* link and nowhere else. It never appears in a packet that
+   crosses a router. The first three octets are the vendor OUI, which is why we
+   left them in: 00-0D-3A is Microsoft. That is a hardware fact, not a personal
+   one. The last three octets were removed, because together with a timestamp
+   they identify a specific machine.
+
+2. "DHCP Enabled: Yes" — this address was NEGOTIATED, not configured
+   Four messages, in this order, before any of the rest of this output existed:
+
+     DISCOVER  broadcast   "is there a DHCP server on this link?"
+     OFFER     from server "you may have 10.0.20.252, here is the rest of it"
+     REQUEST   broadcast   "I accept 10.0.20.252, from THAT server"
+     ACK       from server "confirmed, here is your lease"
+
+   The REQUEST is broadcast, not unicast, on purpose: it tells every *other*
+   DHCP server on the link that their offer was declined. RFC 2131 §3.1.
+
+3. LINK-LOCAL IPv6 — fe80::/10
+   Present on every IPv6-capable interface, self-assigned, never routed. It is
+   how NDP (Neighbor Discovery, IPv6's replacement for ARP) works before any
+   global address exists. If your only IPv6 address starts fe80:, you do not
+   have IPv6 connectivity — you have an IPv6 interface.
+
+4. WHO I AM — 10.0.20.252
+   RFC 1918 private space. This address is meaningless outside this network.
+   No packet on the public internet will ever be addressed to it. Everything in
+   `path-and-nat.txt` follows from that one sentence.
+
+     10.0.0.0/8        10.0.0.0     - 10.255.255.255   (16,777,216 addresses)
+     172.16.0.0/12     172.16.0.0   - 172.31.255.255   ( 1,048,576 addresses)
+     192.168.0.0/16    192.168.0.0  - 192.168.255.255  (    65,536 addresses)
+
+5. WHO IS NEARBY — 255.255.128.0, which is /17
+   255.255.128.0 = 11111111.11111111.10000000.00000000 -> 17 leading ones.
+   So: 17 network bits, 15 host bits, 2^15 = 32,768 addresses in the block,
+   32,766 usable by the classic rule (minus the network and broadcast addresses).
+   Network 10.0.0.0, broadcast 10.0.127.255.
+
+   FOOTNOTE, because this machine is a cloud VM: Azure reserves five addresses per
+   subnet, not two — the network address, the broadcast address, and three more for
+   the platform's gateway, DNS, and future use. So 32,763 are actually assignable
+   here. The classic arithmetic is what you will be asked for; the platform
+   reservation is what you will hit when a /29 turns out to hold three usable
+   addresses instead of six. Both are worth knowing.
+   https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-faq
+
+   This is the single most load-bearing number on the screen. It is how the host
+   decides, for every outbound packet:
+
+     destination inside 10.0.0.0/17  ->  ARP for it, put it on the wire directly
+     destination outside            ->  ARP for the GATEWAY, send the frame there
+                                        with the ORIGINAL destination IP intact
+
+   Get the mask wrong and you get the classic "some sites work and some don't"
+   failure, which looks like DNS and is not.
+
+6. DEFAULT GATEWAY — 10.0.0.1
+   The address this host sends anything non-local to. Note what it is not: it is
+   not the DHCP server, and it is not the DNS server.
+
+7. DHCP SERVER — 168.63.129.16
+   A *different machine* from the gateway. This is Azure's documented platform
+   address for DHCP, DNS, and health probes.
+   https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16
+
+8. DNS SERVER — 10.0.254.4
+   A *third* machine. Three roles, three servers.
+
+   On your home network all three lines will say 192.168.1.1 (or similar),
+   because the router is doing all three jobs. That coincidence is why students
+   think "gateway", "DHCP server", and "resolver" are one thing. They are three
+   jobs that happen to be cheap to co-locate.
+
+   Ask the diagnostic question: if line 8 broke, what would fail? Names, and
+   only names. Addresses would still route. That is why "the internet is down"
+   is almost never the right first hypothesis.
+
+9. THE VIRTUAL ADAPTERS
+   172.24.192.1 and 172.21.16.1 are Hyper-V/WSL switches: private networks that
+   exist entirely inside this machine, with no default gateway because nothing
+   is meant to leave through them. They matter in Week 3, when a container binds
+   to the wrong one and you cannot reach your own service.
+
+   NOTE the lease expiry: "September 21, 2162". A 136-year lease is a platform
+   artifact of a cloud VM, not a normal DHCP lease. A home router hands out 12
+   or 24 hours. When you read your own output, a lease that never expires is a
+   hint that something other than a router is managing your address.
+
+================================================================================
+
+$ route print -4
+
+===========================================================================
+Interface List
+ 26...00 0d 3a XX XX XX ......Microsoft Hyper-V Network Adapter #3
+  1...........................Software Loopback Interface 1
+ 54...00 15 5d XX XX XX ......Hyper-V Virtual Ethernet Adapter
+ 72...00 15 5d XX XX XX ......Hyper-V Virtual Ethernet Adapter #2
+===========================================================================
+
+IPv4 Route Table
+===========================================================================
+Active Routes:
+Network Destination        Netmask          Gateway       Interface  Metric
+          0.0.0.0          0.0.0.0         10.0.0.1      10.0.20.252      6
+         10.0.0.0    255.255.128.0         On-link       10.0.20.252    261
+      10.0.20.252  255.255.255.255         On-link       10.0.20.252    261
+     10.0.127.255  255.255.255.255         On-link       10.0.20.252    261
+        127.0.0.0        255.0.0.0         On-link         127.0.0.1    331
+        127.0.0.1  255.255.255.255         On-link         127.0.0.1    331
+    168.63.129.16  255.255.255.255         10.0.0.1      10.0.20.252      6
+  169.254.169.254  255.255.255.255         10.0.0.1      10.0.20.252      6
+      172.21.16.0    255.255.240.0         On-link       172.21.16.1   5256
+     172.24.192.0    255.255.240.0         On-link      172.24.192.1   5256
+        224.0.0.0        240.0.0.0         On-link       10.0.20.252    261
+  255.255.255.255  255.255.255.255         On-link       10.0.20.252    261
+===========================================================================
+Persistent Routes:
+  None
+
+--------------------------------------------------------------------------------
+READING THE ROUTE TABLE
+--------------------------------------------------------------------------------
+
+  A route table is not a list. It is a lookup with one rule:
+  MOST SPECIFIC PREFIX WINS. Longest mask first, metric only breaks ties.
+
+  0.0.0.0/0 via 10.0.0.1
+      The default route. The least specific entry possible, so it is chosen only
+      when nothing else matched. "I do not know where this goes; ask the gateway."
+
+  10.0.0.0/17 On-link
+      "These are my neighbours." No gateway, because none is needed: ARP for the
+      destination and put the frame on the wire. This row IS the subnet mask
+      from `ipconfig`, expressed as a routing decision.
+
+  127.0.0.0/8 On-link via 127.0.0.1
+      Loopback. An entire /8 — 16.7 million addresses — that never touches a
+      wire. This row is why "it works on localhost" proves nothing: traffic to
+      127.0.0.1 is matched here, handed straight back to the kernel, and never
+      passes a NIC, a switch, a firewall, a router, or NAT.
+
+  168.63.129.16/32 via 10.0.0.1
+      A host route: /32, one single address, more specific than the default
+      route, so it wins. This is how a platform pins one destination to one
+      path. When one host is unreachable and everything else works, look here.
+
+  169.254.169.254/32 via 10.0.0.1
+      The cloud instance-metadata address. Remember it: in Week 9 you will
+      threat-model SSRF, and this address is the single most common target,
+      because it answers without authentication to anything that can reach it.
+
+  Trace one packet yourself:
+
+    to 10.0.19.7        -> matches 10.0.0.0/17    -> on-link, ARP for 10.0.19.7
+    to 8.8.8.8          -> matches 0.0.0.0/0      -> frame to 10.0.0.1's MAC,
+                                                     IP destination stays 8.8.8.8
+    to 127.0.0.1        -> matches 127.0.0.0/8    -> never leaves the kernel
+
+  The second case is the one people get wrong. The frame is addressed to the
+  gateway's MAC. The packet is still addressed to 8.8.8.8. Layer 2 changes at
+  every hop; layer 3 does not. That is the whole idea of routing.

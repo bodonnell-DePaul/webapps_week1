@@ -1,0 +1,42 @@
+DNS resolution for status.campuspulse-demo.example, 2026-08-16 08:55.
+Two independent resolvers, so the answer is not a single cache's opinion.
+
+================================================================================
+A) via 1.1.1.1
+================================================================================
+
+$ dig @1.1.1.1 +noall +answer status.campuspulse-demo.example A
+
+status.campuspulse-demo.example. 287 IN  A   198.51.100.24
+
+
+================================================================================
+B) via 8.8.8.8
+================================================================================
+
+$ dig @8.8.8.8 +noall +answer status.campuspulse-demo.example A
+
+status.campuspulse-demo.example. 300 IN  A   198.51.100.24
+
+
+================================================================================
+C) the VM's actual public address, read from the platform
+================================================================================
+
+$ cloud-cli network public-ip show --name campuspulse-demo-pip \
+    --query "{addr:ipAddress, assoc:ipConfiguration.id}" -o table
+
+Addr             Assoc
+---------------  -------------------------------------------
+198.51.100.24    .../campuspulse-demo-nic0/ipConfigurations/ipconfig1
+
+
+================================================================================
+D) reachability of that address on a port that is known to work
+================================================================================
+
+$ curl -sS --max-time 10 -o /dev/null -w "connect=%{time_connect}s\n" telnet://198.51.100.24:22
+connect=0.041329s
+
+  Both resolvers agree. The address they return is the address the platform says
+  is attached to this VM. That address answers on port 22 in 41 ms.

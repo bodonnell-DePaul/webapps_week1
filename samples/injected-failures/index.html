@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instructor-injected failures — Week 1 - CSC 436</title>
+<link rel="stylesheet" href="../../../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../../../docs/getting-started.html">Start here</a>
+<a href="../../../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../../../docs/course-map.html">Course map</a>
+<a href="../../../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="README.md" download>Download Markdown source</a></p>
+<h1 id="instructor-injected-failures--week-1">Instructor-injected failures — Week 1</h1>
+<p><strong>CSC 436 — HW1, task 7.</strong> Two failures. Diagnose each from the evidence you are given.</p>
+<hr>
+<h2 id="what-these-are">What these are</h2>
+<p>Each folder contains an <strong>evidence bundle</strong>: the artifacts an operator would actually have
+in front of them, and nothing else. No source code, no access to the machine, no ability to
+run a new command. You get what the on-call engineer got at 02:00.</p>
+<p>That constraint is the assignment. Anyone can diagnose a system they can poke at. The skill
+being tested is reading evidence that is already fixed.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Folder</th><th>Symptom the reporter used</th><th>What it actually tests</th></tr></thead><tbody><tr><td><a href="failure-01-refused-from-lan/index.html"><code>failure-01-refused-from-lan/</code></a></td><td>&quot;It works for me, it doesn&#39;t work for my partner&quot;</td><td>Listening address vs. port; refused means <em>something answered</em></td></tr><tr><td><a href="failure-02-timeout-from-outside/index.html"><code>failure-02-timeout-from-outside/</code></a></td><td>&quot;The health check just hangs&quot;</td><td>Drop vs. reject; ruling a cause <strong>out</strong> with evidence</td></tr></tbody></table></div>
+<p>They are deliberately <strong>not</strong> the same failure twice. The correct answer to the first is the
+wrong answer to the second, and the evidence in the second bundle rules it out explicitly.
+If you find yourself writing the same diagnosis for both, re-read the socket table.</p>
+<hr>
+<h2 id="honesty-note--read-this-it-is-part-of-the-lesson">Honesty note — read this, it is part of the lesson</h2>
+<p>These are <strong>constructed teaching scenarios</strong>, and this file says so on purpose.</p>
+<ul>
+<li>The <strong>fault behaviour is real.</strong> Every exit code, error string, timing, and socket-table
+line was produced by reproducing the fault on a real machine and copying the result. The
+reproduction commands are below; run them yourself.</li>
+<li>The <strong>deployment identity is fictional.</strong> Host names, public addresses, and the security
+group belong to a made-up CampusPulse deployment, kept consistent across the bundle.
+Public addresses use <a href="https://www.rfc-editor.org/rfc/rfc5737.html">RFC 5737</a> documentation
+ranges (<code>198.51.100.0/24</code>, <code>203.0.113.0/24</code>) so nothing points at a real host.</li>
+</ul>
+<p>Disclosing the boundary between what is captured and what is constructed is exactly what
+part 8 of the <a href="../../../../docs/evidence-standard.html">evidence standard</a> asks of you. We are
+modelling it before we grade it.</p>
+<hr>
+<h2 id="what-you-submit-per-failure">What you submit, per failure</h2>
+<p>A short written diagnosis — target <strong>200–350 words each</strong> — containing all five of:</p>
+<ol>
+<li><strong>The observation.</strong> Quote the specific line(s) of evidence you are reasoning from. Not
+&quot;the curl failed&quot; — the exit code and the message.</li>
+<li><strong>The mechanism.</strong> What happened on the wire, in packets. Say SYN, RST, drop, FIN.</li>
+<li><strong>The root cause</strong>, stated as a single falsifiable sentence.</li>
+<li><strong>A cause you ruled OUT, and the specific evidence that ruled it out.</strong> This is worth as
+much as the right answer. A diagnosis that only argues <em>for</em> one cause is a guess that
+happened to land.</li>
+<li><strong>The one command</strong> you would run to confirm — and what output would prove you wrong.</li>
+</ol>
+<blockquote>
+<p><strong>A wrong diagnosis with correct reasoning from the evidence earns most of the credit.
+A right diagnosis with no reasoning earns very little.</strong> We are grading the method.</p>
+</blockquote>
+<hr>
+<h2 id="reproducing-the-fault-behaviour-yourself">Reproducing the fault behaviour yourself</h2>
+<p>Encouraged, and it is the fastest way to understand the difference:</p>
+<pre><code class="language-bash"># Failure 1 — refused. Bind to loopback, then knock on the LAN address.
+node ../campuspulse-stub.mjs 127.0.0.1 8471
+curl -sS --max-time 6 http://127.0.0.1:8471/healthz     # 200
+curl -sS --max-time 6 http://&lt;your-lan-ip&gt;:8471/healthz # exit 7, refused
+
+# Failure 2 — silent drop. A black-holed address behaves exactly like a DENY rule.
+curl -sS --max-time 8 http://192.0.2.1/healthz          # exit 28, timed out
+</code></pre>
+<p>Run both. The difference between &quot;answered no&quot; and &quot;said nothing&quot; is the whole unit.</p>
+<hr>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

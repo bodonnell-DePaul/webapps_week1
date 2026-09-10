@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Failure 02 — &quot;The health check just hangs&quot; - CSC 436</title>
+<link rel="stylesheet" href="../../../../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../../../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../../../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../../../../docs/getting-started.html">Start here</a>
+<a href="../../../../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../../../../docs/course-map.html">Course map</a>
+<a href="../../../../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="README.md" download>Download Markdown source</a></p>
+<h1 id="failure-02--the-health-check-just-hangs">Failure 02 — &quot;The health check just hangs&quot;</h1>
+<p><strong>CSC 436 — HW1 task 7, failure 2 of 2.</strong> Diagnose from the evidence in <code>evidence/</code>.</p>
+<blockquote>
+<p><strong>The answer to failure 01 is not the answer to this one, and the evidence in this bundle
+rules it out explicitly.</strong> If you are about to write &quot;it&#39;s bound to localhost&quot;, find the
+file that says otherwise first.</p>
+</blockquote>
+<hr>
+<h2 id="the-report-you-received">The report you received</h2>
+<blockquote>
+<p><strong>From:</strong> the grading harness, 03:12</p>
+<p><code>GET https://status.campuspulse-demo.example/healthz</code> — <strong>no response, request abandoned
+after 30s.</strong> Third consecutive nightly failure. Team notified.</p>
+</blockquote>
+<blockquote>
+<p><strong>From:</strong> Marcus, 08:40</p>
+<p>I don&#39;t understand this at all. I SSH&#39;d into the VM and ran the health check <em>on the box</em>
+and it&#39;s a clean 200. The container&#39;s up, <code>docker ps</code> looks fine, the logs show it serving
+requests. Nothing has been deployed since Tuesday, and it was fine through Wednesday night.</p>
+<p>The weird part: it doesn&#39;t say refused, it doesn&#39;t say anything. <code>curl</code> just sits there
+until I get bored. I left it running for four minutes once.</p>
+<p>I did notice a warning in the container log about a deprecated config key. Could that be
+it? I asked an assistant and it told me to bind to <code>0.0.0.0</code> — but we already do, I
+checked. It also suggested disabling TLS verification, which I did not do.</p>
+</blockquote>
+<hr>
+<h2 id="what-you-have">What you have</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="evidence/01-curl-from-outside.txt"><code>evidence/01-curl-from-outside.txt</code></a></td><td>The grader&#39;s <code>curl</code>, from the public internet</td></tr><tr><td><a href="evidence/02-curl-on-the-box.txt"><code>evidence/02-curl-on-the-box.txt</code></a></td><td>The same check run <strong>on the VM itself</strong>, three ways</td></tr><tr><td><a href="evidence/03-listening-sockets.txt"><code>evidence/03-listening-sockets.txt</code></a></td><td><code>ss -ltnp</code> on the VM</td></tr><tr><td><a href="evidence/04-container-log.txt"><code>evidence/04-container-log.txt</code></a></td><td>The last 40 lines of the container log</td></tr><tr><td><a href="evidence/05-security-group.json"><code>evidence/05-security-group.json</code></a></td><td>Exported inbound firewall rules for the VM, with change history</td></tr><tr><td><a href="evidence/06-dns.txt"><code>evidence/06-dns.txt</code></a></td><td>Resolution for <code>status.campuspulse-demo.example</code> from two resolvers</td></tr></tbody></table></div>
+<hr>
+<h2 id="answer-these-in-the-format-the-bundle-readme-specifies">Answer these, in the format the <a href="../index.html">bundle README</a> specifies</h2>
+<ol>
+<li>What is the root cause? One falsifiable sentence.</li>
+<li><strong>Prove it is not failure 01.</strong> Quote the line that rules out a loopback bind.</li>
+<li>The request <em>times out</em> rather than being refused. Explain, in packets, why the cause you
+named produces silence instead of a rejection — and what a rejection would have implied
+instead.</li>
+<li>Marcus offers three candidate explanations: the deprecated-config warning, DNS, and the
+assistant&#39;s <code>0.0.0.0</code> advice. Rule out each with a named file.</li>
+<li>It worked Tuesday night and nothing was deployed. <strong>Something changed anyway.</strong> What, and
+where in <code>evidence/</code> is it?</li>
+<li>What is the fix, and what is the <em>first</em> thing you check afterwards to prove it worked?</li>
+</ol>
+<hr>
+<h2 id="the-habit-this-one-builds">The habit this one builds</h2>
+<p>Failure 01 taught you to read the listening socket. This one is the case where the listening
+socket is <strong>perfect</strong> and the service is still unreachable — so the evidence has to take you
+somewhere else.</p>
+<p>The discriminator is the <em>shape</em> of the failure:</p>
+<ul>
+<li><strong>refused</strong> — a packet arrived, something answered &quot;no&quot; (RST). The host is reachable.</li>
+<li><strong>timed out with 0 bytes</strong> — nothing answered at all. Something is discarding packets
+silently, or they never arrived.</li>
+</ul>
+<p>A firewall that <strong>rejects</strong> produces the first. A firewall that <strong>drops</strong> produces the
+second. Nearly every cloud security group drops. Learn what that looks like once and you
+will recognise it for the rest of your career.</p>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

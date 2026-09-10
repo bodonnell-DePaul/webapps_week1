@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Failure 01 — &quot;It works for me, it doesn't work for my partner&quot; - CSC 436</title>
+<link rel="stylesheet" href="../../../../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../../../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../../../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../../../../docs/getting-started.html">Start here</a>
+<a href="../../../../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../../../../docs/course-map.html">Course map</a>
+<a href="../../../../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="README.md" download>Download Markdown source</a></p>
+<h1 id="failure-01--it-works-for-me-it-doesnt-work-for-my-partner">Failure 01 — &quot;It works for me, it doesn&#39;t work for my partner&quot;</h1>
+<p><strong>CSC 436 — HW1 task 7, failure 1 of 2.</strong> Diagnose from the evidence in <code>evidence/</code>.
+Do not read the other failure&#39;s material first; they are meant to be separated.</p>
+<hr>
+<h2 id="the-report-you-received">The report you received</h2>
+<blockquote>
+<p><strong>From:</strong> Priya, 21:14</p>
+<p>Hey — I&#39;ve got CampusPulse running on my laptop for the demo tomorrow. <code>/healthz</code> returns
+200 for me all day. Dev is on the same Wi-Fi in the same room and gets <strong>nothing</strong>. She
+says &quot;connection refused.&quot;</p>
+<p>I restarted the app twice. I turned the Windows firewall off completely and it changed
+nothing. I checked the port about ten times, it is definitely 8471 in the config and
+definitely 8471 in her URL. I even pinged my laptop from her machine and <em>that</em> didn&#39;t
+work either, so maybe the campus Wi-Fi is blocking us from seeing each other?</p>
+<p>Can we just move it to port 80? I read that 8471 might be blocked.</p>
+</blockquote>
+<hr>
+<h2 id="what-you-have">What you have</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="evidence/01-app-startup.log"><code>evidence/01-app-startup.log</code></a></td><td>The application&#39;s own startup output on Priya&#39;s laptop</td></tr><tr><td><a href="evidence/02-listening-sockets.txt"><code>evidence/02-listening-sockets.txt</code></a></td><td><code>netstat -ano</code> and <code>Get-NetTCPConnection</code>, run on Priya&#39;s laptop</td></tr><tr><td><a href="evidence/03-curl-from-priya.txt"><code>evidence/03-curl-from-priya.txt</code></a></td><td><code>curl -v</code> run <strong>on Priya&#39;s laptop</strong>, against three different addresses</td></tr><tr><td><a href="evidence/04-curl-from-dev.txt"><code>evidence/04-curl-from-dev.txt</code></a></td><td><code>curl -v</code> run <strong>on Dev&#39;s laptop</strong>, plus a <code>ping</code></td></tr><tr><td><a href="evidence/05-ipconfig-priya.txt"><code>evidence/05-ipconfig-priya.txt</code></a></td><td>Priya&#39;s <code>ipconfig</code> — the addresses her machine actually holds</td></tr></tbody></table></div>
+<p>You may not run anything against Priya&#39;s laptop. It is 21:14 and she has gone to bed.</p>
+<hr>
+<h2 id="answer-these-in-the-format-the-bundle-readme-specifies">Answer these, in the format the <a href="../index.html">bundle README</a> specifies</h2>
+<ol>
+<li>What is the root cause? One falsifiable sentence.</li>
+<li>Priya offers three hypotheses — port 8471 is blocked, the Wi-Fi has client isolation, and
+the firewall. <strong>Each one is refuted by something in <code>evidence/</code>.</strong> Name the file and the
+line that refutes each.</li>
+<li><code>ping</code> from Dev to Priya&#39;s laptop also failed. Does that support Priya&#39;s Wi-Fi theory?
+Answer with reference to a specific piece of evidence.</li>
+<li>What is the fix, and how would you <em>prove</em> it worked — using evidence, not a browser?</li>
+<li>Priya&#39;s last suggestion is to move to port 80. If she did that and changed nothing else,
+what would Dev see? Explain in terms of the socket, not the app.</li>
+</ol>
+<blockquote>
+<p><strong>Question 3 is the one most students get wrong.</strong> Read it twice.</p>
+</blockquote>
+<hr>
+<h2 id="the-trap-stated-openly">The trap, stated openly</h2>
+<p>There is one line in <code>evidence/</code> that settles this in about four seconds, and it is not in
+the file you will look at first. Most people open the curl transcripts, see &quot;refused&quot;, and
+start reasoning about firewalls. The socket table already told you the answer.</p>
+<p>The habit this failure is trying to build: <strong>when a connection fails, look at the listening
+socket before you look at anything else.</strong></p>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

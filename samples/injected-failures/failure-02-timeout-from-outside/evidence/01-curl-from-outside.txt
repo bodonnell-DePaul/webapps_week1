@@ -1,0 +1,77 @@
+Run from a laptop on the public internet, 2026-08-16 08:52.
+
+================================================================================
+A) the failing health check, with a deadline so it does not run forever
+================================================================================
+
+$ curl -sS --max-time 30 -v https://status.campuspulse-demo.example/healthz
+* Host status.campuspulse-demo.example:443 was resolved.
+* IPv6: (none)
+* IPv4: 198.51.100.24
+*   Trying 198.51.100.24:443...
+* Operation timed out after 30001 milliseconds with 0 bytes received
+* closing connection #0
+curl: (28) Operation timed out after 30001 milliseconds with 0 bytes received
+
+  ^ note where it stopped. "Trying" was printed. Nothing after it.
+    No "Established connection". No TLS handshake lines. No response headers.
+
+
+================================================================================
+B) the same host, on port 22, which we know is open
+================================================================================
+
+$ curl -sS --max-time 10 -v telnet://198.51.100.24:22
+*   Trying 198.51.100.24:22...
+* Established connection to 198.51.100.24 (198.51.100.24 port 22) from 203.0.113.9 port 54118
+SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.5
+
+  ^ connected in 41 ms and the server sent its banner. This host is up, routable,
+    and reachable from this laptop right now.
+
+
+================================================================================
+C) a port we expect to be closed, for comparison
+================================================================================
+
+$ curl -sS --max-time 10 -v http://198.51.100.24:8080/
+*   Trying 198.51.100.24:8080...
+* Operation timed out after 10001 milliseconds with 0 bytes received
+curl: (28) Operation timed out after 10001 milliseconds with 0 bytes received
+
+
+================================================================================
+D) plain HTTP on 80, in case there is a redirect we are missing
+================================================================================
+
+$ curl -sS --max-time 10 -v http://status.campuspulse-demo.example/healthz
+*   Trying 198.51.100.24:80...
+* Operation timed out after 10001 milliseconds with 0 bytes received
+curl: (28) Operation timed out after 10001 milliseconds with 0 bytes received
+
+
+================================================================================
+E) timing detail, three consecutive attempts on 443
+================================================================================
+
+$ for i in 1 2 3; do
+>   curl -sS --max-time 10 -o /dev/null \
+>        -w "attempt $i: appconnect=%{time_appconnect}s total=%{time_total}s\n" \
+>        https://status.campuspulse-demo.example/healthz
+> done
+attempt 1: appconnect=0.000000s total=10.001s
+attempt 2: appconnect=0.000000s total=10.001s
+attempt 3: appconnect=0.000000s total=10.001s
+
+  Two things to read here.
+
+  * time_appconnect is 0.000000 on all three: TLS never started, so the TCP
+    connection underneath it never completed.
+
+  * total is 10.001s on all three, pinned to OUR deadline to the millisecond.
+    The request did not FAIL, it EXPIRED. Compare section B on port 22 of the
+    same address, which connected in 41 ms and returned a banner.
+
+  Note also what curl never printed in section A: there is no
+  "* Established connection to ..." line. curl emits that only after the
+  handshake completes. "Trying" with nothing after it is the signature.

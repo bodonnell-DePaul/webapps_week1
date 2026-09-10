@@ -1,0 +1,212 @@
+CSC 436 — Week 1 — Refused, timed out, reset: three answers, three causes
+Real output. Captured 2026-08-15. Sanitised per samples/README.md.
+================================================================================
+  The single highest-value diagnostic skill in this course, and the one students
+  most often skip:
+
+      READ THE FAILURE. The failure names the layer.
+================================================================================
+
+
+CASE 1 — CONNECTION REFUSED
+--------------------------------------------------------------------------------
+Nothing is listening on port 9 of this machine.
+
+    $ Measure-Command { curl -sS --max-time 8 http://127.0.0.1:9/ }
+    curl: (7) Failed to connect to 127.0.0.1:9 after 2021 ms: Could not connect to server
+
+    TotalSeconds : 2.11
+
+  curl exit code 7. On Linux/macOS the message reads "Connection refused"; the
+  Windows Schannel build words it as "Could not connect to server". Same event.
+
+  WHAT HAPPENED ON THE WIRE
+      SYN  ->
+      <-  RST, ACK
+
+  The host was REACHED. Its TCP stack looked for a socket bound to (127.0.0.1, 9),
+  found none, and sent a reset. A refusal is a REPLY. Somebody was home.
+
+  WHAT IT RULES OUT
+      - the host being down or unroutable          (it answered)
+      - a name resolution problem                  (we already had an address)
+      - a packet filter dropping traffic           (a drop is silent; this was not)
+
+  WHAT IT POINTS AT
+      - the process is not running
+      - the process is running but bound to a DIFFERENT ADDRESS  <-- most common
+      - the process is running on a DIFFERENT PORT than you think
+
+  FIRST COMMAND, always the socket table, never a browser refresh:
+      Windows   netstat -ano | findstr :9
+      Linux     ss -ltnp | grep :9
+      macOS     lsof -nP -iTCP:9 -sTCP:LISTEN
+
+  NOTE THE 2021 ms. A refusal is not always instantaneous — Windows retries a
+  loopback connect before giving up. Do not diagnose by stopwatch. Diagnose by
+  message, then confirm with the socket table.
+
+
+CASE 2 — TIMED OUT
+--------------------------------------------------------------------------------
+192.0.2.1 is RFC 5737 TEST-NET-1: routable in form, black-holed in practice.
+
+    $ Measure-Command { curl -sS --max-time 8 http://192.0.2.1/ }
+    curl: (28) Operation timed out after 8012 milliseconds with 0 bytes received
+
+    TotalSeconds : 8.09
+
+  curl exit code 28. It ran until OUR deadline and stopped. Note the shape: it did
+  not fail, it EXPIRED. Without --max-time it would have sat there for the OS
+  connect timeout, typically 20-130 seconds.
+
+  WHAT HAPPENED ON THE WIRE
+      SYN  ->
+      (nothing)
+      SYN  ->            retransmit, ~1s later
+      (nothing)
+      SYN  ->            retransmit, ~2s later, backing off
+      (nothing)
+
+  Silence. TCP's answer to silence is to retransmit with exponential backoff,
+  because it cannot distinguish "dropped" from "slow".
+
+  WHAT IT RULES OUT
+      - a wrong port on a reachable host          (that gives RST, see Case 1)
+
+  WHAT IT POINTS AT
+      - a firewall or security group with a DROP/DENY rule (not REJECT)
+      - a cloud security group with no inbound allow rule for that port
+      - a route that goes nowhere, or a black-holed address
+      - a host that is genuinely off
+
+  ****  REFUSED means something ANSWERED "no".                                 ****
+  ****  TIMED OUT means NOTHING ANSWERED AT ALL.                               ****
+  ****  Those are different layers, different teams, and different fixes.      ****
+  ****  If your evidence cannot tell them apart, you have no evidence.         ****
+
+
+CASE 3 — RESET MID-CONNECTION
+--------------------------------------------------------------------------------
+Different from Case 1: here the handshake SUCCEEDED and the connection was torn
+down afterwards. Reproduced against a server that accepts the request and then
+aborts the socket — which is what a crashing server looks like from outside.
+
+    $ curl -sS --max-time 8 -v http://127.0.0.1:8472/
+    > GET / HTTP/1.1
+    > Host: 127.0.0.1:8472
+    > User-Agent: curl/8.21.0
+    > Accept: */*
+    >
+    * Request completely sent off
+    * Recv failure: Connection was reset
+    * closing connection #0
+    curl: (56) Recv failure: Connection was reset
+
+  curl exit code 56. Note what preceded it: "Request completely sent off". The
+  connection was ESTABLISHED and our bytes were delivered. The failure is after
+  the handshake, which is the entire distinction from Case 1.
+
+  WHAT HAPPENED ON THE WIRE
+      SYN        ->
+      <-  SYN,ACK
+      ACK        ->
+      GET / ...  ->
+      <-  RST                 <- the peer aborted an ESTABLISHED connection
+
+  A mid-stream RST is a REPUDIATION, not a refusal. Common causes, roughly ordered
+  by how often you will meet them this quarter:
+
+      - the server process crashed while handling the request
+      - you sent TLS to a plaintext port (also exit 35, same reset)
+      - an idle NAT or load-balancer entry expired and a later packet arrived
+        against a table entry that no longer exists
+      - a proxy enforced a body/header size limit
+      - a TLS handshake failed in a way the peer chose to abort rather than alert
+
+  A NEAR MISS WORTH KNOWING — plaintext HTTP at a TLS port is usually NOT a reset:
+
+    $ curl -sS --max-time 10 http://www.depaul.edu:443/
+    curl: (52) Empty reply from server
+
+  Exit 52, not 56. The TLS server read our cleartext "GET / HTTP/1.1", could not
+  parse it as a ClientHello, and closed the connection cleanly with a FIN. An
+  orderly close and an abort are different events, and only a capture — or a
+  careful read of the exit code — separates them.
+
+  DISTINGUISHING IT: a reset that arrives BEFORE the handshake completes is
+  Case 1. A reset that arrives AFTER is Case 3. The capture tells you in one
+  glance; the error message alone often does not. This is precisely why HW1
+  asks for a capture and not a screenshot.
+
+
+THE DECISION TABLE
+--------------------------------------------------------------------------------
+
+  symptom              wire event        reachable?  most likely cause
+  -------------------  ----------------  ----------  ---------------------------
+  Connection refused   RST before ESTAB  yes         wrong bind address / not up
+  Timed out, 0 bytes   no reply at all   unknown     filter DROP / no route / off
+  Reset by peer        RST after ESTAB   yes         crash / protocol mismatch /
+                                                     expired NAT or LB entry
+  Name not resolved    no packet sent    n/a         DNS — you never left home
+  TLS handshake error  ESTAB then alert  yes         cert, SNI, or version problem
+
+  Read the bottom two rows carefully. "Could not resolve host" means NO PACKET WAS
+  EVER SENT to the server; nothing about the server is implicated. A TLS error
+  means the TCP connection WORKED PERFECTLY and the disagreement is above it. Both
+  get misreported as "the server is down" every single quarter.
+
+
+TWO HONEST COMPLICATIONS
+--------------------------------------------------------------------------------
+
+  1. EXIT CODE 7 IS NOT A SYNONYM FOR "REFUSED".
+     curl uses exit 7 for its generic "could not connect", which covers both
+     ECONNREFUSED and EHOSTUNREACH / ENETUNREACH. Read the MESSAGE, not the code:
+
+       "Connection refused"          -> a RST came back; the host is alive
+       "No route to host"            -> the local stack gave up; nothing was sent
+       "Network is unreachable"      -> same; check your own routing first
+
+     Same exit code, opposite conclusions. The decision table above assumes you
+     read the text.
+
+  2. A FILTER CAN ALSO REJECT WITH ICMP, NOT JUST DROP.
+     The clean story is "reject fast, drop silent", and most cloud security groups
+     do drop. But a router or firewall configured with
+     `--reject-with icmp-admin-prohibited` returns ICMP type 3 code 13, which the
+     OS surfaces as a FAST failure — often "No route to host", occasionally
+     "Connection refused" depending on the platform.
+
+     So: a fast failure does NOT prove the destination host answered. It proves
+     SOMETHING answered. If you need to know which, capture: a TCP RST comes from
+     the host's TCP stack, an ICMP unreachable comes from a router, and the packet
+     itself says which.
+
+     This does not change the practical rule — silence still means a drop — but do
+     not let a student conclude "fast failure therefore the host is up" without
+     checking what actually replied.
+
+
+REPRODUCING ALL THREE, ON ANY PLATFORM
+--------------------------------------------------------------------------------
+Every command below was run and its exit code verified before this file shipped.
+
+  refused (exit 7):
+      curl -sS --max-time 8 http://127.0.0.1:9/
+      # port 9 (discard) is reserved and never in use on a normal desktop
+
+  timed out (exit 28):
+      curl -sS --max-time 8 http://192.0.2.1/
+      # RFC 5737 TEST-NET-1: reserved for documentation, routed nowhere
+
+  reset (exit 56):
+      node weeks/week01/samples/abort-server.mjs      # terminal 1
+      curl -sS --max-time 8 http://127.0.0.1:8472/    # terminal 2
+
+  and the near miss, so you can tell it apart (exit 52):
+      curl -sS --max-time 10 http://example.com:443/
+      # cleartext HTTP at a TLS port: an orderly close, not an abort
+
+  Run all four. Save the transcripts. Two of them are HW1 evidence.

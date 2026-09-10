@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A worked annotated capture - CSC 436</title>
+<link rel="stylesheet" href="../../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../../docs/getting-started.html">Start here</a>
+<a href="../../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../../docs/course-map.html">Course map</a>
+<a href="../../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="capture-walkthrough.md" download>Download Markdown source</a></p>
+<h1 id="a-worked-annotated-capture">A worked annotated capture</h1>
+<p><strong>CSC 436 — Week 1.</strong> This is the depth <a href="../homework.html">HW1</a> expects for the <em>annotated
+packet capture</em> artifact. It is not a description of a good annotation. It is one.</p>
+<p>Everything quoted below was read out of
+<a href="week01-fallback-capture.pcap"><code>week01-fallback-capture.pcap</code></a>, which is in this folder.
+Open it in Wireshark and follow along.</p>
+<blockquote>
+<p><strong>What &quot;annotated&quot; means here.</strong> Not &quot;I labelled the packets.&quot; For each stage: <em>what the
+bytes say</em>, <em>what that proves</em>, <em>what it does not prove</em>, and <em>which command you would run
+to check it independently</em>. The last two are where the marks are, and where an AI that
+cannot see your capture has nothing to contribute.</p>
+</blockquote>
+<hr>
+<h2 id="capture-summary">Capture summary</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>File</td><td><code>week01-fallback-capture.pcap</code></td></tr><tr><td>Packets</td><td>32</td></tr><tr><td>Bytes</td><td>11,602</td></tr><tr><td>Client</td><td><code>10.0.20.252</code> (RFC 1918 — this machine is behind NAT)</td></tr><tr><td>Target</td><td><code>example.com</code></td></tr><tr><td>Streams</td><td>1 DNS exchange over UDP, 1 TLS/HTTPS connection, 1 cleartext HTTP connection</td></tr></tbody></table></div>
+<p><strong>Redaction:</strong> none was needed. No cookies, no <code>Authorization</code> header, no credentials, no
+public client address. The client address is private and the destination is a public
+documentation host. <em>Saying this explicitly is part 8 of the evidence standard — do it even
+when the answer is &quot;nothing to redact.&quot;</em></p>
+<hr>
+<h2 id="stage-1--dns-a-name-becomes-an-address">Stage 1 — DNS. A name becomes an address</h2>
+<p><strong>Display filter:</strong> <code>dns</code></p>
+<pre><code class="language-text">1   10.0.20.252:54988 -&gt; 1.1.1.1:53      Standard query    A example.com
+2   1.1.1.1:53 -&gt; 10.0.20.252:54988      Standard response A 104.20.23.154
+                                                           A 172.66.147.243
+</code></pre>
+<p>Bytes worth reading, from packet 2:</p>
+<pre><code class="language-text">transaction id  0x7138       matches the query. this is how the stub resolver
+                             knows the answer belongs to its question
+flags           0x8180       QR=1 (response), RD=1, RA=1, RCODE=0 (NOERROR)
+answers         2
+answer 1        type A   ttl 224   rdata 104.20.23.154
+answer 2        type A   ttl 224   rdata 172.66.147.243
+</code></pre>
+<p><strong>What this proves.</strong> The name resolved, and it resolved to <strong>two</strong> addresses with <strong>224
+seconds</strong> left on the TTL. That TTL is not the record&#39;s configured value — it is the
+<em>remainder</em> of a countdown already in progress at the resolver. Somebody else asked for
+<code>example.com</code> about 76 seconds ago, assuming a 300-second record.</p>
+<p><strong>What it does not prove.</strong> Nothing about whether either address is reachable, whether the
+service is up, or whether this is the answer anyone else would get. Two addresses came back;
+the client will try one, and which one is a client decision no application code participates
+in. A different resolver, or the same resolver 225 seconds later, may answer differently.</p>
+<p><strong>How I would check independently.</strong></p>
+<pre><code class="language-bash">dig +noall +answer example.com A          # ask again, watch the TTL count down
+dig @8.8.8.8 +noall +answer example.com A # a second, independent resolver
+</code></pre>
+<p><strong>What surprised me.</strong> The query is UDP and it is 29 bytes. The single most consequential
+lookup in the whole page load — get it wrong and nothing else happens — travels in one
+unacknowledged, unencrypted datagram. Week 2 is about who is allowed to answer it.</p>
+<hr>
+<h2 id="stage-2--tcp-three-packets-before-a-single-byte-of-anything-useful">Stage 2 — TCP. Three packets before a single byte of anything useful</h2>
+<p><strong>Display filter:</strong> <code>tcp.flags.syn == 1</code></p>
+<pre><code class="language-text">3   10.0.20.252:61039 -&gt; 104.20.23.154:443   [SYN]      Seq=0
+4   104.20.23.154:443 -&gt; 10.0.20.252:61039   [SYN, ACK] Seq=0 Ack=1
+5   10.0.20.252:61039 -&gt; 104.20.23.154:443   [ACK]      Seq=1 Ack=1
+</code></pre>
+<p><strong>What this proves.</strong> A bidirectional path exists and both ends agreed to start a
+conversation. Each side sent its initial sequence number and acknowledged the other&#39;s; from
+here, either side can detect a gap or a duplicate. The connection is now identified by the
+four-tuple <code>10.0.20.252:61039 &lt;-&gt; 104.20.23.154:443</code>, and the client port <code>61039</code> is
+ephemeral — inside the 49152–65535 range on this platform, chosen by the kernel, gone
+forever when the socket closes.</p>
+<p><strong>What it does not prove.</strong> Nothing about the service. A TCP handshake completes against any
+process that called <code>listen()</code>, including one that is wedged, misconfigured, or about to
+return 500 to everything. &quot;The port is open&quot; is a statement about the kernel, not the app.</p>
+<p><strong>How I would check independently.</strong></p>
+<pre><code class="language-bash">curl -sS -v https://example.com/ -o /dev/null 2&gt;&amp;1 | grep -E &quot;Trying|Established&quot;
+</code></pre>
+<p>An <code>* Established connection to ...</code> line means these three packets happened. <code>* Trying …</code>
+with nothing after it means the SYN went out and nothing came back — which is exactly how
+<a href="injected-failures/failure-02-timeout-from-outside/index.html"><code>injected-failures/failure-02</code></a> is
+diagnosed.</p>
+<blockquote>
+<p>I checked whether <code>-w &quot;%{time_connect}&quot;</code> could serve as the tell instead, and it cannot:
+on curl 8.21 (Windows, Schannel) a <em>timed-out</em> connect reported a small non-zero value
+while a <em>refused</em> connect reported <code>0.000000</code> — the opposite of the intuition. Verify a
+discriminator before you rely on it; that is the whole habit this course is teaching.</p>
+</blockquote>
+<p><strong>What surprised me.</strong> Nothing is encrypted yet and nothing has been requested yet. Three
+round trips of pure setup are spent before the client is allowed to say what it wants. That
+cost is exactly what QUIC was designed to delete, and it is why Block C previews it.</p>
+<hr>
+<h2 id="stage-3--tls-clienthello-the-one-part-of-https-that-is-not-private">Stage 3 — TLS ClientHello. The one part of HTTPS that is not private</h2>
+<p><strong>Display filter:</strong> <code>tls.handshake.type == 1</code></p>
+<pre><code class="language-text">6   10.0.20.252:61039 -&gt; 104.20.23.154:443   Client Hello   (segment 1/2, 1460 bytes)
+7   10.0.20.252:61039 -&gt; 104.20.23.154:443   Client Hello   (segment 2/2, 143 bytes)
+</code></pre>
+<p>The record, decoded:</p>
+<pre><code class="language-text">record type          22 (handshake)
+record version       0x0301   &lt;- a frozen compatibility value, not &quot;TLS 1.0&quot;
+handshake type       1 (ClientHello), length 1594
+legacy_version       0x0303   &lt;- also compatibility machinery
+cipher suites        52 offered, beginning:
+                       0x1302 TLS_AES_256_GCM_SHA384
+                       0x1303 TLS_CHACHA20_POLY1305_SHA256
+                       0x1301 TLS_AES_128_GCM_SHA256
+                       0xc02f ECDHE_RSA_WITH_AES_128_GCM_SHA256
+extensions           65281, 0, 11, 10, 35, 16, 22, 23, 13, 43, 45, 51
+  ext 0  server_name (SNI)      &quot;example.com&quot;          &lt;-- IN CLEARTEXT
+  ext 16 ALPN                   h2, http/1.1           &lt;-- how HTTP/2 gets chosen
+  ext 43 supported_versions     TLS 1.3 offered        &lt;-- the server selects
+  ext 51 key_share
+</code></pre>
+<p><strong>What this proves.</strong> Three things a reader of the application source could never learn:</p>
+<ol>
+<li><strong>The hostname travelled in the clear.</strong> <code>example.com</code> is plainly visible in packet 6,
+before any key exchange. Anyone on the path — the coffee shop, the ISP, a corporate
+middlebox — sees <em>which site</em> you are visiting, though not what you did there.
+<strong>Caveat, and state it in your own write-up if it applies:</strong> this is true <em>because ECH
+was not in use here</em>. Encrypted Client Hello moves the real SNI inside an encrypted
+inner ClientHello. If your capture shows no <code>server_name</code>, ECH is the likely reason and
+&quot;SNI absent, ECH in use&quot; is a correct and complete observation.</li>
+<li><strong>The version fields are compatibility values, not the truth.</strong> The record layer carries
+<code>0x0301</code> and the ClientHello body carries <code>legacy_version 0x0303</code>, both frozen for the
+benefit of middleboxes deployed a decade ago that drop handshakes they do not recognise.
+The versions actually on offer are in extension 43, <code>supported_versions</code>, and <strong>the
+server picks one and announces it in the ServerHello</strong> — the client only proposes. This
+is what protocol ossification looks like in a hex dump.</li>
+<li><strong>The client, not the server, opens the menu.</strong> 52 cipher suites and a set of protocols
+were offered. The server selects one according to its own policy — not necessarily the
+first mutual match. Nothing in the application chose any of it.</li>
+</ol>
+<p><strong>What it does not prove.</strong> That the connection is secure. The ClientHello is an <em>offer</em>.
+Whether the server presents a valid chain, whether this client trusts it, and which suite
+was actually selected are all in the ServerHello and the certificate that follow — and this
+capture cannot show the certificate contents once the handshake moves to encrypted records.</p>
+<p><strong>How I would check independently.</strong></p>
+<pre><code class="language-bash">openssl s_client -connect example.com:443 -servername example.com &lt;/dev/null 2&gt;&amp;1 | head -30
+curl -sS -o /dev/null -w &quot;%{ssl_verify_result} %{http_version}\n&quot; https://example.com/
+</code></pre>
+<p><strong>What surprised me.</strong> SNI is cleartext, and it is cleartext <em>by design</em> — the server needs
+to know which certificate to present before it has a key to encrypt with. HTTPS hides the
+contents of the conversation, not the fact that you had it. That distinction becomes a
+threat-model line in Week 9.</p>
+<hr>
+<h2 id="stage-4--the-encrypted-body-and-why-the-capture-goes-quiet">Stage 4 — the encrypted body, and why the capture goes quiet</h2>
+<p><strong>Display filter:</strong> <code>tls.record.content_type == 23</code></p>
+<pre><code class="language-text">14  10.0.20.252:61039 -&gt; 104.20.23.154:443   Application Data, 211 bytes
+16  104.20.23.154:443 -&gt; 10.0.20.252:61039   Application Data, 1394 bytes
+18  104.20.23.154:443 -&gt; 10.0.20.252:61039   Application Data, 24 bytes
+</code></pre>
+<p>Packet 14 is the HTTP request. Wireshark cannot tell you that, and neither can anyone on the
+path. It is 211 bytes of ciphertext.</p>
+<p><strong>What this proves.</strong> TLS is working. The request and the response are unreadable to a
+passive observer.</p>
+<p><strong>What it does not prove.</strong> Anything at all about the HTTP exchange inside — status code,
+headers, cache behaviour, or whether it succeeded. <strong>This is the moment a capture stops being
+the right tool</strong> and DevTools or <code>curl -v</code> takes over, because both sit <em>above</em> the
+encryption. Knowing which tool answers which question is the actual skill here.</p>
+<p><strong>What surprised me.</strong> The sizes leak. 211 bytes out, 1394 back: even without decryption, an
+observer learns the shape of the exchange. Traffic analysis does not require breaking
+anything.</p>
+<hr>
+<h2 id="stage-5--http-in-the-clear-so-the-bytes-are-visible-at-least-once">Stage 5 — HTTP in the clear, so the bytes are visible at least once</h2>
+<p><strong>Display filter:</strong> <code>http.request || http.response</code></p>
+<p>The same site over port 80, included in this capture specifically so the HTTP layer is
+readable exactly once.</p>
+<pre><code class="language-text">26  10.0.20.252:61040 -&gt; 172.66.147.243:80   GET / HTTP/1.1
+28  172.66.147.243:80 -&gt; 10.0.20.252:61040   HTTP/1.1 200 OK
+</code></pre>
+<p>Request, verbatim, all 109 bytes:</p>
+<pre><code class="language-http">GET / HTTP/1.1
+Host: example.com
+User-Agent: csc436-week01-fallback/1.0
+Accept: */*
+Connection: close
+</code></pre>
+<p>Response headers, verbatim:</p>
+<pre><code class="language-http">HTTP/1.1 200 OK
+Age: 9547
+Allow: GET, HEAD
+Cf-Cache-Status: HIT
+Cf-Ray: a2bac40338dfaa54-SEA
+Content-Type: text/html
+Date: Sat, 15 Aug 2026 19:56:58 GMT
+Last-Modified: Wed, 12 Aug 2026 20:15:57 GMT
+Server: cloudflare
+Connection: close
+Transfer-Encoding: chunked
+</code></pre>
+<p><strong>What this proves.</strong> Four things, and only one of them is about the origin server:</p>
+<ul>
+<li><code>Host: example.com</code> is how one address serves many sites. Take that header away and the
+server cannot know which site you meant. It is the reason virtual hosting works.</li>
+<li><code>Cf-Cache-Status: HIT</code> with <code>Age: 9547</code> — <strong>this response did not come from the origin.</strong>
+A Cloudflare edge node answered from cache, and the object had been sitting there for 2
+hours 39 minutes. The origin server may not have been involved for hours.</li>
+<li><code>Cf-Ray: ...-SEA</code> names the edge location: Seattle. The answer came from a machine near
+the client, not near the site owner.</li>
+<li><code>Transfer-Encoding: chunked</code> — the body arrived in framed chunks (<code>22f</code> then <code>0</code>), so the
+server did not know the length when it began sending.</li>
+</ul>
+<p><strong>What it does not prove.</strong> That the origin is healthy. A cached <code>200</code> is a statement about
+an edge node&#39;s memory. If the origin fell over an hour ago, this response would look
+identical. That is a feature — and it is why Week 5 grades a MISS → HIT → 304 sequence
+rather than a single successful request.</p>
+<p><strong>How I would check independently.</strong></p>
+<pre><code class="language-bash">curl -sSI https://example.com/ | grep -iE &#39;cf-cache-status|age|cf-ray&#39;
+curl -sSI https://example.com/ | grep -iE &#39;cf-cache-status|age&#39;   # run twice, compare Age
+</code></pre>
+<p><strong>What surprised me.</strong> I asked for <code>example.com</code> and a cache in Seattle answered. Between
+&quot;the browser&quot; and &quot;the server&quot; in the diagram everyone draws, there was another computer,
+in another city, that was not mentioned in the URL and is not visible in the source. It is
+the machine that actually served the page.</p>
+<hr>
+<h2 id="what-this-capture-taken-as-a-whole-establishes">What this capture, taken as a whole, establishes</h2>
+<ol>
+<li><strong>Four different protocols cooperated</strong> — DNS over UDP, TCP, TLS, HTTP — and any one of
+them can fail independently, with a different symptom and a different fix.</li>
+<li><strong>The connection was to <code>104.20.23.154</code></strong>, an address chosen by a resolver 224 seconds
+into a TTL countdown, from two candidates, by a selection process no application
+participated in.</li>
+<li><strong>The hostname was public, the payload was not.</strong></li>
+<li><strong>The origin server may never have been contacted.</strong> <code>Cf-Cache-Status: HIT</code> says an edge
+node answered.</li>
+</ol>
+<p>And the honest limits, stated because leaving them out is how a dossier loses marks:</p>
+<ul>
+<li>I cannot see the certificate chain in this capture; the handshake is largely encrypted in
+TLS 1.3. <code>openssl s_client</code> answers that question, not Wireshark.</li>
+<li>I cannot see the HTTPS request or response bodies. DevTools or <code>curl -v</code> answers that.</li>
+<li>I captured one page load once, from one network. Nothing here generalises to another
+client on another network at another time — as
+<a href="path-and-nat.txt"><code>path-and-nat.txt</code></a> demonstrates, where the same name gave three
+different answers within minutes.</li>
+</ul>
+<hr>
+<h2 id="what-earns-marks-and-what-does-not">What earns marks, and what does not</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Loses marks</th><th>Earns marks</th></tr></thead><tbody><tr><td>&quot;Packet 6 is the TLS ClientHello.&quot;</td><td>&quot;Packet 6 carries <code>server_name: example.com</code> in cleartext, so the hostname is visible on-path even though the payload is not.&quot;</td></tr><tr><td>&quot;The handshake completed successfully.&quot;</td><td>&quot;The handshake proves a listener accepted the connection; it says nothing about whether the service is healthy — a wedged process still completes a handshake.&quot;</td></tr><tr><td>A screenshot of the Wireshark window</td><td>The display filter you used, the packet numbers it matched, and the field values you read</td></tr><tr><td>&quot;DNS resolved example.com.&quot;</td><td>&quot;TTL 224 of an assumed 300 means this answer was already cached; my capture reflects a resolver&#39;s memory, not the zone.&quot;</td></tr><tr><td>Silence about what the capture cannot show</td><td>&quot;Bodies are encrypted from packet 14 on; I used <code>curl -v</code> for the HTTP layer, and here it is.&quot;</td></tr></tbody></table></div>
+<p><strong>The pattern:</strong> every claim names the artifact, the field, and the limit. Do that for each
+of the four stages and the artifact is complete.</p>
+<hr>
+<h2 id="reproducing-this-against-your-own-site">Reproducing this against your own site</h2>
+<p>Once you have bought your domain and stood up CampusPulse, run the same four filters against
+your own page load. The interesting version of this assignment is not <code>example.com</code> — it is
+the moment you find a stage that behaves differently from what you assumed you had deployed.</p>
+<pre><code class="language-bash"># Wireshark capture filter, so you record only what you need:
+host &lt;your-domain&gt; or port 53
+
+# then, in the display filter bar, one stage at a time:
+dns
+tcp.flags.syn == 1
+tls.handshake.type == 1
+http.request || http.response
+</code></pre>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

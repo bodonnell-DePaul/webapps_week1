@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab — Capture your own traffic, then break your own port - CSC 436</title>
+<link rel="stylesheet" href="../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../docs/getting-started.html">Start here</a>
+<a href="../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../docs/course-map.html">Course map</a>
+<a href="../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="lab.md" download>Download Markdown source</a></p>
+<h1 id="lab--capture-your-own-traffic-then-break-your-own-port">Lab — Capture your own traffic, then break your own port</h1>
+<p><strong>CSC 436 — Week 1 · 35 minutes</strong></p>
+<blockquote>
+<p><strong>Protect this lab.</strong> If a lecture block runs long, let it end unfinished. The learning
+objective for Week 1 lives here, not in the slides.</p>
+</blockquote>
+<hr>
+<h2 id="what-you-will-have-at-the-end">What you will have at the end</h2>
+<ol>
+<li>Your machine&#39;s own answer to <em>&quot;where am I on the network?&quot;</em> — read, not guessed</li>
+<li>A packet capture in which you can point at the DNS query, the TCP handshake, the TLS
+ClientHello, and an HTTP request</li>
+<li>A service you broke <strong>on purpose</strong>, diagnosed from its symptoms alone</li>
+</ol>
+<p>Steps 1, 3, 4 and 6 are HW1 artifacts. <strong>Save everything as you go</strong> — you are doing a third
+of your homework right now, and re-running it later on a different network is not the same.</p>
+<hr>
+<h2 id="before-you-start-2-min">Before you start (2 min)</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>Everyone</strong></td><td>A terminal, a browser with DevTools, and Node.js</td></tr><tr><td><strong>Wireshark</strong></td><td>Installed and able to see your interface. If not — <strong>skip to <a href="#step-5-alt--if-you-cannot-capture-5-min">step 5-ALT</a></strong>. It is worth full credit and it takes less time.</td></tr><tr><td><strong>Working directory</strong></td><td>Start at the course content root (student release; <code>instructor</code> for authors), containing <code>weeks</code>, <code>docs</code>, and <code>samples</code></td></tr></tbody></table></div>
+<p>Make a folder for your output now, so nothing is lost to a closed terminal:</p>
+<pre><code class="language-bash">mkdir hw1-evidence
+</code></pre>
+<p><strong>Keep this terminal at the content root</strong> so the sample paths work. Save output
+under <code>hw1-evidence</code> (prefix output filenames with that folder), or move your
+saved evidence there at the end. Use <code>curl.exe</code> in PowerShell, not its legacy
+<code>curl</code> alias; replace <code>/dev/null</code> with <code>NUL</code>.</p>
+<hr>
+<h2 id="step-1--where-am-i-4-min">Step 1 — Where am I? (4 min)</h2>
+<table>
+<tr><th>Windows (PowerShell)</th><th>macOS</th><th>Linux</th></tr>
+<tr><td>
+
+<pre><code class="language-powershell">ipconfig /all      &gt; 01-config.txt
+route print -4    &gt;&gt; 01-config.txt
+arp -a            &gt;&gt; 01-config.txt
+</code></pre>
+</td><td>
+
+<pre><code class="language-bash">ifconfig            &gt; 01-config.txt
+netstat -rn -f inet &gt;&gt; 01-config.txt
+arp -a             &gt;&gt; 01-config.txt
+</code></pre>
+</td><td>
+
+<pre><code class="language-bash">ip addr      &gt; 01-config.txt
+ip route    &gt;&gt; 01-config.txt
+ip neigh    &gt;&gt; 01-config.txt
+</code></pre>
+</td></tr>
+</table>
+
+<p><strong>Expected:</strong> an IPv4 address, a subnet mask (or <code>/prefix</code>), a default gateway, and one or
+more DNS servers.</p>
+<p><strong>Now answer these out loud to yourself — two minutes, no typing:</strong></p>
+<ol>
+<li>What is your mask in CIDR? Convert it in your head. <code>255.255.255.0</code> → <code>/24</code>.
+<code>255.255.128.0</code> → count the ones: <code>/17</code>.</li>
+<li>Are your gateway, DHCP server, and DNS resolver the <strong>same address</strong>? On a home network
+they usually are — one box doing three jobs. Name the three jobs.</li>
+<li>Is your address in <code>10.</code>, <code>172.16–31.</code>, or <code>192.168.</code>? Then it is <strong>private</strong>, and nothing
+on the internet can address a packet to it.</li>
+</ol>
+<blockquote>
+<p><strong>Reference:</strong> <a href="samples/network-config.txt"><code>samples/network-config.txt</code></a> is the same
+output, fully annotated, from a machine where the three roles are three different servers.</p>
+</blockquote>
+<hr>
+<h2 id="step-2--what-is-listening-and-on-which-address-4-min">Step 2 — What is listening, and on which address? (4 min)</h2>
+<table>
+<tr><th>Windows</th><th>macOS</th><th>Linux</th></tr>
+<tr><td>
+
+<pre><code class="language-powershell">netstat -ano &gt; 02-sockets.txt
+Get-NetTCPConnection -State Listen |
+  Format-Table LocalAddress,LocalPort,
+    OwningProcess
+</code></pre>
+</td><td>
+
+<pre><code class="language-bash">lsof -nP -iTCP -sTCP:LISTEN &gt; 02-sockets.txt
+netstat -an | grep LISTEN
+</code></pre>
+</td><td>
+
+<pre><code class="language-bash">ss -ltnp &gt; 02-sockets.txt
+ss -tn state established
+</code></pre>
+</td></tr>
+</table>
+
+<p><strong>Read the local address column, not the port.</strong> Find one listener on <code>127.0.0.1</code> and one on
+<code>0.0.0.0</code> (shown as <code>*</code> or <code>[::]</code> on some platforms).</p>
+<blockquote>
+<p><strong>Ask yourself now, because it is step 6&#39;s answer:</strong> what is the difference between those
+two, for a client on another machine?</p>
+</blockquote>
+<hr>
+<h2 id="step-3--is-the-far-end-reachable-three-ways-to-ask-4-min">Step 3 — Is the far end reachable? Three ways to ask (4 min)</h2>
+<pre><code class="language-bash"># 1. ICMP — the classic, and the most misleading
+ping www.depaul.edu                  # add -n 4 on Windows, -c 4 elsewhere
+
+# 2. The path, hop by hop
+tracert -d -h 15 www.depaul.edu      # Windows
+traceroute -n -m 15 www.depaul.edu   # macOS / Linux
+
+# 3. The port you actually care about
+curl -sS -o /dev/null -w &quot;%{http_code} in %{time_total}s\n&quot; https://www.depaul.edu/
+</code></pre>
+<p><em>(Windows: <code>-o NUL</code> instead of <code>-o /dev/null</code>.)</em></p>
+<p><strong>Expected — and this is the point of the step:</strong> on many campus, corporate, and cloud
+networks, <strong>1 and 2 will fail while 3 succeeds.</strong> Rows of <code>* * *</code> in traceroute and 100%
+packet loss in ping, and a clean <code>200</code> from <code>curl</code>.</p>
+<p>If that happens to you, write down the one sentence this lab exists to teach:</p>
+<blockquote>
+<p><strong>ICMP being blocked is evidence about ICMP. It is not evidence about my service.</strong></p>
+</blockquote>
+<p>If ping <em>does</em> work, note the round-trip time — you will compare it against your TCP
+handshake in step 5.</p>
+<p><strong>Save:</strong> <code>03-reachability.txt</code></p>
+<blockquote>
+<p><strong>Reference:</strong> <a href="samples/path-and-nat.txt"><code>samples/path-and-nat.txt</code></a> has this exact
+contrast captured, plus hard evidence of NAT rewriting both the source address and the
+source port.</p>
+</blockquote>
+<hr>
+<h2 id="step-4--what-the-far-end-actually-sees-2-min">Step 4 — What the far end actually sees (2 min)</h2>
+<pre><code class="language-bash">curl -sS -v https://www.depaul.edu/ -o /dev/null 2&gt; 04-curl.txt   # -o NUL on Windows
+curl -sS https://ifconfig.me/all
+</code></pre>
+<p>In <code>04-curl.txt</code>, find the line that reads roughly:</p>
+<pre><code class="language-text">* Established connection to www.depaul.edu (64.239.109.65 port 443)
+  from 10.0.20.252 port 49302
+</code></pre>
+<p>Compare the public address reported by the echo service with your private address.
+This is evidence consistent with NAT or a proxy. <strong>Do not compare the two source
+ports as proof of rewriting:</strong> these requests go to different destinations and
+use different connections. NAPT may preserve a port. To prove a rewrite, correlate
+the <strong>same flow</strong> at both ends or use the explicitly labeled supplied fixture.
+Public IPv6 may have no NAT at all. Redact the public address before submission.</p>
+<hr>
+<h2 id="step-5--capture-a-real-page-load-10-min">Step 5 — Capture a real page load (10 min)</h2>
+<blockquote>
+<h3 id="-read-this-first--it-will-save-you-twenty-minutes">⚠ Read this first — it will save you twenty minutes</h3>
+<p><strong>Modern browsers may send DNS over HTTPS (DoH).</strong> Chrome and Edge ship &quot;Secure DNS&quot; in
+automatic mode, Firefox enables DoH by default in some regions. When DoH is active, your
+DNS query is encrypted inside a TLS connection to a resolver — so Wireshark&#39;s <code>dns</code> filter
+matches <strong>nothing</strong>, and it looks like your capture is broken.</p>
+<p>Two ways to avoid it. Pick one:</p>
+<ul>
+<li>Try <code>curl</code> to simplify the capture, but it does <strong>not guarantee UDP/53</strong>:
+answers may be cached, configured DoH/DoT may apply, or DNS may use TCP.</li>
+<li>Do not change managed browser/network security settings. If DNS is not visible,
+record the absence and use the supplied DNS exchange for that annotation.
+A missing DNS packet alone does not identify the cause.</li>
+</ul>
+</blockquote>
+<ol>
+<li><strong>Open Wireshark</strong> and pick the interface with traffic on it (the one with a moving
+sparkline).</li>
+<li><strong>Set a capture filter first</strong> — this keeps the file small and your classmates&#39; traffic
+out of it:<pre><code class="language-text">host example.com or port 53
+</code></pre>
+</li>
+<li>Start the capture.</li>
+<li>Generate the traffic. <strong>The <code>curl</code> route is the reliable one:</strong><pre><code class="language-bash">curl -sS https://example.com/ -o /dev/null     # -o NUL on Windows
+curl -sS http://example.com/  -o /dev/null     # cleartext, for the HTTP filter
+</code></pre>
+If you would rather use a browser, load <code>https://example.com/</code> in a <strong>private/incognito</strong>
+window with Secure DNS disabled per the warning above.</li>
+<li>Stop the capture. <strong>File → Save As →</strong> <code>05-capture.pcapng</code>.</li>
+<li>Now run these four display filters in turn. For each, note the packet numbers.</li>
+</ol>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>#</th><th>Display filter</th><th>You are looking for</th></tr></thead><tbody><tr><td>1</td><td><code>dns</code></td><td>the query and the response. <strong>Read the TTL.</strong></td></tr><tr><td>2</td><td><code>tcp.flags.syn == 1</code></td><td>SYN and SYN+ACK per successful TCP connection; retries/multiple connections add packets</td></tr><tr><td>3</td><td><code>tls.handshake.type == 1</code></td><td>ClientHello; SNI is normally visible unless ECH protects the inner name</td></tr><tr><td>4</td><td><code>http.request</code></td><td>matches the <strong>cleartext</strong> request only — zero matches for the HTTPS one</td></tr></tbody></table></div>
+<p><strong>Filter 4 matching nothing on the HTTPS connection is the lesson, not a failure.</strong>
+HTTP application data is encrypted; some TLS handshake metadata is still visible.
+The second <code>curl</code> in step 5 is the plaintext request
+that makes <code>http.request</code> match, so you can read the HTTP layer in the clear exactly once.</p>
+<p><strong>Then, for each of the four, write one sentence answering: <em>what does this prove, and what
+does it not prove?</em></strong> That framing is the whole HW1 annotation standard, and
+<a href="samples/capture-walkthrough.html"><code>samples/capture-walkthrough.md</code></a> shows it done in full for
+these exact four stages.</p>
+<hr>
+<h3 id="step-5-alt--if-you-cannot-capture-5-min">Step 5-ALT — if you cannot capture (5 min)</h3>
+<p><strong>Use this the moment Wireshark costs you more than five minutes.</strong> It is worth full credit
+in HW1 and it is not a lesser path.</p>
+<pre><code class="language-bash"># 1. Open the provided capture — it contains all four stages
+#    weeks/week01/samples/week01-fallback-capture.pcap
+</code></pre>
+<p>Run the same four display filters against it. All four match, including <code>http.request</code>.</p>
+<p><strong>Read <a href="samples/index.html"><code>samples/README.md</code></a> first.</strong> It states exactly which parts of
+that file are real captured bytes (the DNS exchange, the TLS ClientHello, the certificate,
+the HTTP request and response) and which are reconstructed (the Ethernet, IP, and TCP
+framing). Repeating that distinction in your write-up is part of the answer.</p>
+<p>Then capture what you <em>can</em> — a real byte-level trace from your own machine:</p>
+<pre><code class="language-bash">curl -sS -v --trace-ascii 05-trace.txt https://example.com/ -o /dev/null
+</code></pre>
+<p>Open <code>05-trace.txt</code>. Those are the actual bytes your machine sent and received. Find the TLS
+records at the top and the HTTP request below them.</p>
+<hr>
+<h2 id="step-6--break-your-own-listening-port-7-min">Step 6 — Break your own listening port (7 min)</h2>
+<p><strong>This is the part you will remember.</strong></p>
+<h3 id="6a-start-the-service-bound-to-loopback">6a. Start the service, bound to loopback</h3>
+<pre><code class="language-bash">node weeks/week01/samples/campuspulse-stub.mjs 127.0.0.1 8471
+</code></pre>
+<p>It prints <code>campuspulse listening on 127.0.0.1:8471</code>. <strong>It is telling the truth, and the
+truth is not what you need to know.</strong></p>
+<h3 id="6b-in-a-second-terminal-look-at-the-socket">6b. In a second terminal, look at the socket</h3>
+<pre><code class="language-powershell">netstat -ano | findstr :8471          # Windows
+</code></pre>
+<pre><code class="language-bash">ss -ltnp | grep 8471                  # Linux
+lsof -nP -iTCP:8471 -sTCP:LISTEN      # macOS
+</code></pre>
+<p>Note the <strong>local address</strong>: <code>127.0.0.1</code>, not <code>0.0.0.0</code>.</p>
+<h3 id="6c-knock-on-three-doors--all-on-your-own-machine">6c. Knock on three doors — all on your own machine</h3>
+<pre><code class="language-bash">curl -sS --max-time 6 http://127.0.0.1:8471/healthz        # expect 200
+curl -sS --max-time 6 http://localhost:8471/healthz        # expect 200
+curl -sS --max-time 6 -v http://&lt;YOUR-LAN-IP&gt;:8471/healthz # expect REFUSED
+</code></pre>
+<p>Use the IPv4 address from step 1 for <code>&lt;YOUR-LAN-IP&gt;</code>.</p>
+<p><strong>Expected:</strong></p>
+<pre><code class="language-text">curl: (7) Failed to connect to 192.168.1.47 port 8471: Connection refused
+</code></pre>
+<p>That request originated on the server machine. The loopback-only socket is a
+specific explanation, but host firewall/active-reject policy can still affect a
+local-to-LAN-address request. Correlate the listener with the error; do not
+infer &quot;no firewall&quot; from the test&#39;s location.</p>
+<h3 id="6d-diagnose-from-the-symptom-before-you-fix-it">6d. Diagnose from the symptom, before you fix it</h3>
+<p>Answer these before touching anything:</p>
+<ol>
+<li>It said <strong>refused</strong>, not <em>timed out</em>. What does that tell you about whether the packet
+arrived?</li>
+<li>Which of these has it ruled out? <em>(a)</em> the host is down <em>(b)</em> DNS <em>(c)</em> a firewall
+dropping packets <em>(d)</em> the process is not listening on that address</li>
+<li>What single command would confirm your hypothesis?</li>
+</ol>
+<details>
+<summary><strong>Check yourself</strong> — open only after you have answered</summary>
+
+<ol>
+<li>A refusal is an active rejection, consistent with no matching listener or an
+active-reject rule. The listener table makes the bind defect concrete here.</li>
+<li>A literal IP bypasses DNS. A pure silent drop would not itself explain an
+immediate refusal; rejection does not prove which device sent it or rule
+out every firewall policy.</li>
+<li>The socket table from 6b. The local address column says <code>127.0.0.1</code>.</li>
+</ol>
+</details>
+
+<h3 id="6e-fix-it-and-prove-the-fix">6e. Fix it, and prove the fix</h3>
+<p>Stop the server. Restart it bound to every interface:</p>
+<pre><code class="language-bash">node weeks/week01/samples/campuspulse-stub.mjs 0.0.0.0 8471
+</code></pre>
+<p>Re-run <strong>the socket check first</strong>, then the three curls:</p>
+<pre><code class="language-powershell">netstat -ano | findstr :8471     # local address is now 0.0.0.0
+</code></pre>
+<pre><code class="language-bash">curl -sS --max-time 6 http://127.0.0.1:8471/healthz          # 200
+curl -sS --max-time 6 http://&lt;YOUR-LAN-IP&gt;:8471/healthz      # 200
+</code></pre>
+<p><strong>The socket table is the proof.</strong> A successful request tells you the symptom moved; the
+changed local address tells you <em>why</em>. Graders in this course want the second one.</p>
+<h3 id="6f-now-see-the-other-failure-shape">6f. Now see the other failure shape</h3>
+<pre><code class="language-bash">curl -sS --max-time 8 -v http://192.0.2.1/     # documentation address, not a guaranteed black hole
+</code></pre>
+<p>Some networks time out (exit 28); others actively reject this destination.
+Record the actual error text and whether TCP established. <code>time_connect</code> or
+exit 7 alone does not discriminate refusal from every other connect failure.
+Use <code>samples/refused-vs-timeout.txt</code> if your network cannot produce both shapes.</p>
+<p><strong>Save 6b through 6f as <code>06-break-and-fix.txt</code>.</strong> Two of the three failure shapes in HW1 task
+3 are now done.</p>
+<hr>
+<h2 id="step-7--wrap-2-min">Step 7 — Wrap (2 min)</h2>
+<p>Stop the stub server (<code>Ctrl+C</code>). Confirm the port is released:</p>
+<pre><code class="language-powershell">netstat -ano | findstr :8471     # expect no output
+</code></pre>
+<p>You should now have: <code>01-config.txt</code>, <code>02-sockets.txt</code>, <code>03-reachability.txt</code>, <code>04-curl.txt</code>,
+<code>05-capture.pcapng</code> (or <code>05-trace.txt</code>), and <code>06-break-and-fix.txt</code>.</p>
+<p><strong>Before you close the laptop, write one sentence</strong> at the top of <code>06-break-and-fix.txt</code>:
+<em>the difference between &quot;refused&quot; and &quot;timed out&quot;, and what each one rules out.</em> That
+sentence is the exit ticket and it is the most reusable thing in this session.</p>
+<hr>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="wireshark-shows-no-interfaces-or-an-empty-list">Wireshark shows no interfaces, or an empty list</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Platform</th><th>Cause</th><th>Fix</th></tr></thead><tbody><tr><td>Windows</td><td>Npcap not installed or not running</td><td>Re-run the Wireshark installer, <strong>tick Npcap</strong>, reboot. Then <code>sc query npcap</code>.</td></tr><tr><td>macOS</td><td><code>/dev/bpf*</code> not readable by you</td><td>Run the <code>Install ChmodBPF</code> package that ships in the Wireshark <code>.dmg</code>, then log out and back in</td></tr><tr><td>Linux</td><td>Not in the <code>wireshark</code> group</td><td><code>sudo dpkg-reconfigure wireshark-common</code> → yes, then <code>sudo usermod -aG wireshark $USER</code>, then <strong>log out and back in</strong></td></tr><tr><td>Any</td><td>Corporate MDM blocks packet capture</td><td><strong>Not fixable in 35 minutes.</strong> Go to <a href="#step-5-alt--if-you-cannot-capture-5-min">step 5-ALT</a>.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Do not run Wireshark&#39;s GUI as root or Administrator.</strong> It is a large parser exposed to
+hostile input; the whole point of the helper installs above is to avoid that.</p>
+</blockquote>
+<h3 id="the-capture-is-empty-or-shows-only-your-own-machine-talking-to-itself">The capture is empty, or shows only your own machine talking to itself</h3>
+<ul>
+<li>You picked the wrong interface. Choose the one with a moving sparkline on the start screen.</li>
+<li><strong>You are on a VPN.</strong> Capture on the VPN&#39;s virtual adapter (<code>utun</code>, <code>tun0</code>, <code>TAP-Windows</code>)
+rather than the physical one, or disconnect briefly if policy allows.</li>
+<li>Your capture filter is too narrow, or has a typo. Capture filters use <strong>BPF</strong> syntax
+(<code>host example.com</code>), display filters use <strong>Wireshark</strong> syntax (<code>ip.addr == …</code>). They are
+not interchangeable and a typo in a capture filter silently gives you nothing.</li>
+</ul>
+<h3 id="tlshandshaketype--1-matches-nothing"><code>tls.handshake.type == 1</code> matches nothing</h3>
+<ul>
+<li>Your Wireshark predates the <code>ssl</code> → <code>tls</code> rename. Try <code>ssl.handshake.type == 1</code>, then
+upgrade.</li>
+<li>You reused an already-open connection or captured the wrong interface.
+Session resumption still sends a ClientHello on a new TLS connection.</li>
+<li>You captured after the page had already started loading. Start the capture <em>first</em>.</li>
+</ul>
+<h3 id="dns-matches-nothing-but-the-page-loaded-fine"><code>dns</code> matches nothing, but the page loaded fine</h3>
+<p>Possible causes include an OS/browser cache, encrypted DNS, the wrong interface,
+or the capture starting after resolution. <code>curl</code> does not guarantee a plain DNS
+query. Use the supplied exchange if needed and label it; do not weaken managed
+network settings to force a packet.</p>
+<p>Two rarer causes worth knowing:</p>
+<ul>
+<li><strong>The answer was cached</strong>, by the OS or browser, so no query was sent.
+Waiting or using the provided fixture is sufficient; a global cache flush is not required.</li>
+<li><strong>Your resolver is reached over TCP/853 (DoT)</strong> — some managed and mobile configurations
+do this. Same effect, same fix.</li>
+</ul>
+<h3 id="curl-is-not-recognised-older-windows"><code>curl</code> is not recognised (older Windows)</h3>
+<p><code>curl.exe</code> ships with Windows 10 1803 and later. On older builds, use PowerShell&#39;s
+<code>Invoke-WebRequest</code>, or install curl from <a href="https://curl.se/windows/">curl.se/windows</a>.</p>
+<blockquote>
+<p><strong>Watch out:</strong> in PowerShell, <code>curl</code> is an <em>alias for <code>Invoke-WebRequest</code></em>, which does not
+accept <code>-v</code> or <code>-w</code>. <strong>Always type <code>curl.exe</code></strong> in PowerShell to get the real thing.</p>
+</blockquote>
+<h3 id="port-8471-is-already-in-use-eaddrinuse">Port 8471 is already in use (<code>EADDRINUSE</code>)</h3>
+<p>Something else owns it. <strong>Find the owner before you change the port</strong> — that habit is worth
+more than the fix:</p>
+<pre><code class="language-powershell">netstat -ano | findstr :8471        # then: Get-Process -Id &lt;PID&gt;
+</code></pre>
+<pre><code class="language-bash">ss -ltnp | grep 8471                       # Linux
+lsof -nP -iTCP:8471 -sTCP:LISTEN           # macOS
+</code></pre>
+<p>Then pass a different port: <code>node campuspulse-stub.mjs 127.0.0.1 8479</code>.</p>
+<h3 id="curl-http8471-times-out-instead-of-being-refused"><code>curl http://&lt;LAN-IP&gt;:8471/</code> times out instead of being refused</h3>
+<p>That is a <strong>different failure</strong>, and finding it is a good outcome. A host firewall is
+dropping the packet before the kernel can reject it. On Windows, Defender Firewall prompts
+for new listeners; if you dismissed the prompt, the rule may be Block. Either way: <strong>note it,
+because you have just produced the second failure shape yourself</strong>, and it is exactly
+injected failure 02 in miniature.</p>
+<hr>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

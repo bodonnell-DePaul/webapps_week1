@@ -1,0 +1,2988 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course Intro and the Network Underneath — Week 1 Full session — CSC 436 — Web Application Systems</title>
+<meta name="description" content="Review, preparation, logistics, teaching, individual practice, and the end-of-class brief">
+<meta name="generator" content="csc436-deck-pipeline">
+<meta name="course-week" content="01">
+<meta name="course-block" content="session">
+<style>
+/* ============================================================================
+   CSC 436 — Web Application Systems
+   Deck theme: "Operable"
+   ----------------------------------------------------------------------------
+   Shared theme asset. Inlined into every generated HTML deck at build time by
+   presentations/lib/render-html.mjs. Token values mirror assets/theme.json,
+   which is the single source of truth for the PPTX renderer.
+
+   Design canvas: 1280 x 720 CSS px == 13.333in x 7.5in at 96 px/in.
+   Therefore px / 96 = inches and px * 0.75 = points, with no rounding drift
+   between the HTML deck and the PPTX deck.
+
+   Accessibility contract:
+     - Primary content text is 32px on canvas == 24pt projected (the floor).
+     - Every foreground/background pair is verified >= 4.5:1 by
+       scripts/check-contrast.mjs (run via `npm run check:contrast`).
+     - No meaning is carried by hue alone: callouts, diffs and status chips all
+       carry a text label and a shape/icon in addition to color.
+   ========================================================================== */
+
+:root {
+  --bg: #0B1B2B;
+  --bg-deep: #071320;
+  --surface: #17364E;
+  --surface-alt: #1F4363;
+  --rule: #2F5273;
+  --rule-strong: #5B82A6;
+  --text: #F3F8FC;
+  --text-muted: #B6CCDE;
+  --accent: #5EEAD4;
+  --signal: #FCD34D;
+  --danger: #FCA5A5;
+  --success: #86EFAC;
+  --info: #93C5FD;
+
+  --code-surface: #081726;
+  --code-base: #E8F1F8;
+  --code-gutter: #51749A;
+
+  --font-head: "Segoe UI Variable Display", "Segoe UI", Inter, system-ui,
+    -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Segoe UI Variable Text", "Segoe UI", Inter, system-ui,
+    -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-code: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono",
+    "Liberation Mono", ui-monospace, monospace;
+
+  --margin: 72px;
+  --gap: 22px;
+  --radius: 14px;
+  --k: 1;
+}
+
+/* ---------------------------------------------------------------- reset --- */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+body.is-blacked #stage { visibility: hidden; }
+
+/* ---------------------------------------------------------------- stage --- */
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+
+.slide {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1280px;
+  height: 720px;
+  margin-left: -640px;
+  margin-top: -360px;
+  transform: scale(var(--k));
+  transform-origin: center center;
+  background: var(--bg);
+  color: var(--text);
+  display: none;
+  overflow: hidden;
+  /* A quiet directional wash keeps a flat dark deck from looking dead. */
+  background-image:
+    radial-gradient(ellipse 90% 70% at 8% -10%, rgba(94, 234, 212, 0.10), transparent 60%),
+    radial-gradient(ellipse 70% 60% at 100% 108%, rgba(147, 197, 253, 0.08), transparent 62%);
+}
+
+.slide.is-active { display: block; }
+
+.slide-body {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  top: 88px;
+  bottom: 78px;
+  overflow: hidden;
+}
+
+/* The runtime shrink-to-fit target. `.slide-body` is the fixed clipping box;
+   `.fit` holds the content and is zoomed down by deck-runtime.js until the
+   content fits. Height:100% resolves against the unzoomed parent, so zooming
+   out genuinely buys vertical room rather than just making text smaller. */
+.fit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  height: 100%;
+}
+
+.slide.has-sources .slide-body { bottom: 112px; }
+
+/* ------------------------------------------------------------ furniture --- */
+
+.f-rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--accent), #2F5273 55%, transparent);
+  opacity: 0.9;
+}
+
+.f-label {
+  position: absolute;
+  left: var(--margin);
+  top: 38px;
+  font-size: 18px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.f-label b {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.f-foot {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  bottom: 34px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.f-course { letter-spacing: 0.02em; }
+
+.f-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.f-num b { color: var(--text); }
+
+.f-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 5px;
+  width: 100%;
+  background: rgba(47, 82, 115, 0.5);
+}
+
+.f-progress > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--info));
+  transition: width 160ms ease-out;
+}
+
+.sources {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  bottom: 66px;
+  max-height: 54px;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+}
+
+.slide .sources ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: block;
+  font-size: 17px;
+  gap: 0;
+}
+
+.slide .sources li {
+  display: inline;
+  padding-left: 0;
+  font-size: 17px;
+}
+
+.slide .sources li::before { content: none !important; display: none !important; }
+.slide .sources li:not(:last-child)::after { content: " · "; color: var(--rule); }
+.slide .sources a { color: var(--info); text-decoration: none; }
+.slide .sources b { color: var(--text-muted); font-weight: 600; }
+
+/* ----------------------------------------------------------- typography --- */
+
+h1, h2, h3 {
+  font-family: var(--font-head);
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.slide h1 {
+  font-size: 56px;
+  line-height: 1.08;
+  color: var(--text);
+}
+
+.slide h2 {
+  font-size: 40px;
+  line-height: 1.15;
+  color: var(--accent);
+}
+
+.slide h3 {
+  font-size: 30px;
+  line-height: 1.2;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.slide h3 code { text-transform: none; }
+
+.kicker {
+  font-size: 20px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--accent);
+  max-width: none;
+}
+
+.slide p {
+  font-size: 32px;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--text);
+  max-width: 26em;
+}
+
+.slide .lede { color: var(--text-muted); }
+
+.slide ul,
+.slide ol {
+  font-size: 32px;
+  line-height: 1.34;
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.slide li { position: relative; padding-left: 38px; }
+
+.slide ul > li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0.55em;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.slide ol { counter-reset: n; }
+
+.slide ol > li { counter-increment: n; }
+
+.slide ol > li::before {
+  content: counter(n);
+  position: absolute;
+  left: 0;
+  top: 0.06em;
+  width: 30px;
+  text-align: right;
+  font-family: var(--font-head);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.slide li ul,
+.slide li ol {
+  margin-top: 12px;
+  gap: 10px;
+  font-size: 28px;
+}
+
+.slide li ul > li::before {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  top: 0.62em;
+  background: var(--text-muted);
+}
+
+.slide strong { color: #FFFFFF; font-weight: 700; }
+.slide em { color: var(--signal); font-style: italic; }
+
+.slide a { color: var(--info); text-decoration: underline; text-underline-offset: 3px; }
+
+.slide code {
+  font-family: var(--font-code);
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+  font-size: 0.86em;
+  background: rgba(8, 23, 38, 0.85);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 0.06em 0.32em;
+  color: var(--accent);
+}
+
+.slide hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 4px 0;
+  width: 100%;
+}
+
+/* -------------------------------------------------------------- layouts --- */
+
+/* title ------------------------------------------------------------------- */
+
+.slide--title { background-image: radial-gradient(ellipse 80% 90% at 78% 12%, rgba(94, 234, 212, 0.16), transparent 62%); }
+
+.slide--title .f-label { display: none; }
+
+.slide--title .fit { justify-content: center; gap: 22px; }
+
+.slide--title .kicker { font-size: 18px; letter-spacing: 0.22em; color: var(--accent); }
+
+.slide--title h1 {
+  font-size: 76px;
+  line-height: 1.04;
+  max-width: 17em;
+}
+
+.slide--title .sub {
+  font-size: 34px;
+  line-height: 1.3;
+  color: var(--text-muted);
+  max-width: 26em;
+}
+
+.title-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--rule-strong);
+  background: rgba(23, 54, 78, 0.75);
+  color: var(--text-muted);
+}
+
+.chip b { color: var(--accent); font-weight: 700; }
+
+/* section ----------------------------------------------------------------- */
+
+.slide--section { background: var(--bg-deep); }
+
+.slide--section .fit { justify-content: center; gap: 18px; }
+
+.slide--section h1 {
+  font-size: 72px;
+  line-height: 1.06;
+  max-width: 15em;
+}
+
+.slide--section .rule-accent {
+  width: 140px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* quote ------------------------------------------------------------------- */
+
+.slide--quote .fit { justify-content: center; }
+
+.slide--quote blockquote {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 46px;
+  line-height: 1.24;
+  color: var(--text);
+  border-left: 8px solid var(--accent);
+  padding-left: 36px;
+  max-width: 20em;
+  text-wrap: balance;
+}
+
+.slide--quote .attrib {
+  margin-top: 26px;
+  padding-left: 44px;
+  font-size: 26px;
+  color: var(--text-muted);
+}
+
+/* two-column -------------------------------------------------------------- */
+
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  flex: 1;
+  min-height: 0;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.col > h3 {
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.col img {
+  max-width: 100%;
+  max-height: 230px;
+  object-fit: contain;
+  display: block;
+}
+
+.cols--weighted { grid-template-columns: 1.15fr 0.85fr; }
+
+/* code -------------------------------------------------------------------- */
+
+.codeblock {
+  background: var(--code-surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* Never let flex shrink a code block below its content: clipped code is
+     worse than a smaller slide. The runtime shrink-to-fit handles overflow. */
+  flex: 0 0 auto;
+}
+
+/* Fill spare room without shrinking away command lines or bottom padding. */
+.slide--code .fit > .codeblock:last-child,
+.slide--terminal .fit > .codeblock:last-child { flex: 1 0 auto; }
+
+.callout { flex: none; }
+
+.codeblock > figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 22px;
+  background: rgba(47, 82, 115, 0.32);
+  border-bottom: 1px solid var(--rule);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.codeblock > figcaption .lang {
+  font-family: var(--font-code);
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.codeblock pre {
+  margin: 0;
+  padding: 22px 26px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.codeblock code {
+  display: block;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-code);
+  font-size: var(--code-size, 28px);
+  line-height: 1.42;
+  color: var(--code-base);
+  white-space: pre;
+  tab-size: 2;
+}
+
+.slide--code .fit { padding-bottom: 0; }
+.slide--code .codeblock { flex: 1 0 auto; }
+
+/* Line numbering + emphasis, used by the terminal/capture layout. */
+.codeblock code .ln {
+  display: inline-block;
+  width: 2.6em;
+  margin-right: 0.9em;
+  text-align: right;
+  color: var(--code-gutter);
+  user-select: none;
+}
+
+.codeblock code .row { display: block; padding: 0 6px; margin: 0 -6px; border-radius: 4px; }
+
+.codeblock code .row.is-marked {
+  background: rgba(252, 211, 77, 0.16);
+  box-shadow: inset 3px 0 0 var(--signal);
+}
+
+/* terminal ---------------------------------------------------------------- */
+
+.slide--terminal .codeblock,
+.codeblock--terminal { background: #050F1A; }
+
+.codeblock--terminal > figcaption {
+  background: rgba(8, 23, 38, 0.9);
+  font-family: var(--font-code);
+  font-size: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.codeblock--terminal > figcaption::before {
+  content: "● ● ●";
+  letter-spacing: 0.22em;
+  font-size: 14px;
+  color: var(--rule);
+  margin-right: 4px;
+}
+
+.codeblock--terminal code { font-size: var(--code-size, 24px); line-height: 1.42; }
+
+/* image / svg ------------------------------------------------------------- */
+
+.figure {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.figure .frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 18px;
+  overflow: hidden;
+}
+
+.figure--plain .frame { background: none; border: 0; padding: 0; }
+
+.figure img {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Inline SVG fills its frame and letterboxes via preserveAspectRatio, so a
+   diagram can never be the thing that pushes a slide over its height budget. */
+.figure svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.figure figcaption {
+  font-size: 24px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 40em;
+}
+
+.slide--svg .frame { background: none; border: 0; }
+
+/* table ------------------------------------------------------------------- */
+
+.table-wrap {
+  /* Tables must keep their natural height so the runtime's shrink-to-fit pass
+     can see an overfull slide. A flexed, shrinkable table clips rows inside
+     this wrapper before the slide itself appears to overflow. */
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+}
+
+.slide table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 26px;
+  line-height: 1.3;
+}
+
+.slide thead th {
+  background: var(--surface-alt);
+  color: var(--text);
+  font-family: var(--font-head);
+  font-weight: 700;
+  text-align: left;
+  padding: 14px 20px;
+  border-bottom: 2px solid var(--accent);
+  font-size: 24px;
+  letter-spacing: 0.03em;
+}
+
+.slide tbody td {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  color: var(--text);
+}
+
+.slide tbody tr:nth-child(even) td { background: rgba(23, 54, 78, 0.55); }
+.slide tbody tr:last-child td { border-bottom: 0; }
+.slide td code { font-size: 0.82em; }
+
+/* callouts ---------------------------------------------------------------- */
+
+.callout {
+  border-left: 8px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 20px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.callout > .callout-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.callout > .callout-head .ico { font-size: 20px; line-height: 1; }
+
+.callout p,
+.callout li { font-size: 28px; line-height: 1.34; }
+
+.callout ul { gap: 10px; }
+
+.callout--key { border-left-color: #5EEAD4; background: #0E3A38; }
+.callout--key > .callout-head { color: #5EEAD4; }
+.callout--note { border-left-color: #93C5FD; background: #13314F; }
+.callout--note > .callout-head { color: #93C5FD; }
+.callout--tip { border-left-color: #86EFAC; background: #10321F; }
+.callout--tip > .callout-head { color: #86EFAC; }
+.callout--warning { border-left-color: #FCD34D; background: #3A2E07; }
+.callout--warning > .callout-head { color: #FCD34D; }
+.callout--danger { border-left-color: #FCA5A5; background: #3D1717; }
+.callout--danger > .callout-head { color: #FCA5A5; }
+
+/* demo -------------------------------------------------------------------- */
+
+.slide--demo .fit { gap: 16px; }
+
+.slide--demo h1 { font-size: 46px; }
+
+.demo-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  align-self: flex-start;
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: var(--signal);
+  color: #2A1F00;
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.demo-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.demo-col > .demo-panel { flex: 0 1 auto; }
+.demo-col > .demo-panel:first-child:last-child { flex: 1; }
+
+.demo-panel {
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-panel > h3 { font-size: 21px; color: var(--accent); flex: none; }
+.demo-panel ul, .demo-panel ol, .demo-panel p { font-size: 26px; line-height: 1.3; gap: 12px; }
+.demo-panel li { padding-left: 32px; }
+.demo-panel--fallback { border-color: var(--signal); background: #2C2410; }
+.demo-panel--fallback > h3 { color: var(--signal); }
+
+/* checkpoint -------------------------------------------------------------- */
+
+.slide--checkpoint { background: var(--bg-deep); }
+.slide--checkpoint .f-rail { background: linear-gradient(180deg, var(--signal), #8A5A00 60%, transparent); }
+
+.slide--checkpoint .fit { justify-content: center; gap: 26px; }
+
+.cp-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  align-self: flex-start;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 2px solid var(--signal);
+  color: var(--signal);
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.slide--checkpoint h1 { font-size: 48px; max-width: 22em; }
+
+.cp-meta {
+  display: flex;
+  gap: 28px;
+  font-size: 24px;
+  color: var(--text-muted);
+}
+
+.cp-meta b { color: var(--text); }
+
+/* -------------------------------------------------------- overlays / UI --- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  background: #071320;
+  color: var(--text);
+  padding: 40px;
+  overflow: auto;
+}
+
+.overlay.is-open { display: block; }
+
+.overlay h2 {
+  font-family: var(--font-head);
+  font-size: 26px;
+  margin: 0 0 18px;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#help table { border-collapse: collapse; font-size: 17px; max-width: 760px; }
+#help td { padding: 7px 18px 7px 0; vertical-align: top; }
+#help kbd {
+  font-family: var(--font-code);
+  font-size: 15px;
+  background: var(--surface-alt);
+  border: 1px solid var(--rule);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  padding: 3px 9px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* presenter overlay ------------------------------------------------------- */
+
+#presenter { padding: 24px 28px; }
+
+.pv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 20px 26px;
+  height: calc(100vh - 48px);
+}
+
+.pv-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 12px;
+}
+
+.pv-clock {
+  font-family: var(--font-code);
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.pv-clock.is-over { color: var(--danger); }
+
+.pv-bar .pv-pos {
+  font-size: 20px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-bar .pv-hint { margin-left: auto; font-size: 15px; color: var(--text-muted); }
+
+.pv-btn {
+  font: inherit;
+  font-size: 15px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pv-btn:hover { border-color: var(--accent); }
+.pv-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.pv-left, .pv-right { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+
+.pv-thumb {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.pv-thumb > .pv-thumb-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  transform-origin: 0 0;
+}
+
+.pv-thumb .slide {
+  position: static;
+  margin: 0;
+  transform: none;
+  display: block;
+}
+
+.pv-cap {
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.pv-notes {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 20px 24px;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.pv-notes h1, .pv-notes h2, .pv-notes h3 {
+  font-size: 20px;
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+}
+
+.pv-notes p { font-size: 19px; line-height: 1.55; margin: 0 0 12px; max-width: none; color: var(--text); }
+.pv-notes ul, .pv-notes ol { font-size: 19px; gap: 8px; margin: 0 0 12px; }
+.pv-notes li { padding-left: 22px; }
+.pv-notes ul > li::before { width: 8px; height: 8px; top: 0.5em; left: 2px; }
+.pv-notes ol > li::before { font-size: 17px; width: 16px; }
+.pv-notes code { font-size: 0.9em; }
+.pv-notes .empty { color: var(--text-muted); font-style: italic; }
+
+/* overview grid ----------------------------------------------------------- */
+
+#overview .ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.ov-cell {
+  border: 2px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+  aspect-ratio: 16 / 9;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ov-cell.is-current { border-color: var(--accent); }
+.ov-cell:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+
+.ov-cell > .pv-thumb-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.ov-cell > .ov-num {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(7, 19, 32, 0.82);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+
+/* skip link + screen-reader outline --------------------------------------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- print --- */
+
+@page { size: 13.333in 7.5in; margin: 0; }
+
+@media print {
+  html, body {
+    overflow: visible;
+    background: #FFFFFF;
+    color: #0B1B2B;
+    height: auto;
+  }
+
+  #help, #presenter, #overview, .f-progress { display: none !important; }
+
+  #stage { position: static; }
+
+  .slide {
+    /* Print handouts are light-on-white: readable, photocopy-safe, and it does
+       not empty a departmental toner cartridge for a 45-slide deck. */
+    position: relative;
+    left: auto; top: auto;
+    margin: 0;
+    transform: none;
+    display: block !important;
+    page-break-after: always;
+    break-after: page;
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #0B1B2B;
+    border-bottom: 1px solid #C3D4E2;
+  }
+
+  .slide:last-of-type { page-break-after: auto; break-after: auto; }
+
+  .slide h1, .slide p, .slide li, .slide td, .figure figcaption { color: #0B1B2B; }
+  .slide h2, .kicker, .col > h3, .demo-panel > h3 { color: #0E7C6B; }
+  .slide h3 { color: #3E5A72; }
+  .slide strong { color: #000000; }
+  .slide em { color: #8A5A00; }
+  .slide ul > li::before { background: #0E7C6B; }
+  .slide ol > li::before { color: #0E7C6B; }
+  .slide li ul > li::before { background: #3E5A72; }
+  .f-label, .f-foot, .sources, .figure figcaption { color: #3E5A72; }
+  .f-label b { color: #0E7C6B; }
+  .f-num b { color: #0B1B2B; }
+  .f-rail { background: #0E7C6B; }
+  .chip { background: #F1F5F9; border-color: #C3D4E2; color: #3E5A72; }
+  .chip b { color: #0E7C6B; }
+  .slide--section .rule-accent { background: #0E7C6B; }
+  .slide--quote blockquote { color: #0B1B2B; border-left-color: #0E7C6B; }
+  .slide--quote .attrib { color: #3E5A72; }
+  .slide code { background: #F1F5F9; border-color: #C3D4E2; color: #0E5C50; }
+  .slide thead th { background: #E2E8F0; color: #0B1B2B; border-bottom-color: #0E7C6B; }
+  .slide tbody td { border-bottom-color: #C3D4E2; color: #0B1B2B; }
+  .slide tbody tr:nth-child(even) td { background: #F8FAFC; }
+  .table-wrap, .figure .frame, .demo-panel { border-color: #C3D4E2; background: #FFFFFF; }
+  .callout { background: #F1F5F9 !important; color: #0B1B2B; }
+  .callout--key { border-left-color: #0E7C6B; }
+  .callout--key > .callout-head { color: #0E5C50; }
+  .callout--note > .callout-head { color: #1D4ED8; }
+  .callout--tip > .callout-head { color: #14532D; }
+  .callout--warning > .callout-head { color: #8A5A00; }
+  .callout--danger > .callout-head { color: #9B1C1C; }
+  .callout p, .callout li { color: #0B1B2B; }
+  .demo-banner { background: #FCD34D; color: #2A1F00; }
+  .cp-banner { border-color: #8A5A00; color: #8A5A00; }
+  .demo-panel--fallback { background: #FFFBEB; border-color: #8A5A00; }
+  .demo-panel--fallback > h3 { color: #8A5A00; }
+  .sources a { color: #1D4ED8; }
+
+  /* Code keeps its dark surface in print: inverting syntax highlighting to a
+     light theme would break the token color contract the PPTX also uses. */
+  .codeblock { background: #081726 !important; border-color: #2F5273; }
+  .codeblock code { color: #E8F1F8; }
+  .codeblock > figcaption { background: rgba(47, 82, 115, 0.32); color: #B6CCDE; }
+}
+
+@media print {
+  html, body, .slide { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* --------------------------------------------------- reduced motion / hc --- */
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+
+/* generated from assets/theme.json */
+.codeblock code { color: #E8F1F8; }
+.codeblock code .ln { color: #51749A; }
+.hljs-keyword,
+.hljs-keyword_,
+.hljs-section,
+.hljs-section_,
+.hljs-tag,
+.hljs-tag_,
+.hljs-name,
+.hljs-name_,
+.hljs-selector-tag,
+.hljs-selector-tag_,
+.hljs-property,
+.hljs-property_,
+.hljs-template-tag,
+.hljs-template-tag_ { color: #7DD3FC; }
+.hljs-built_in,
+.hljs-built_in_,
+.hljs-type,
+.hljs-type_,
+.hljs-bullet,
+.hljs-bullet_,
+.hljs-class,
+.hljs-class_ { color: #5EEAD4; }
+.hljs-literal,
+.hljs-literal_,
+.hljs-number,
+.hljs-number_,
+.hljs-title,
+.hljs-title_,
+.hljs-function,
+.hljs-function_,
+.hljs-selector-class,
+.hljs-selector-class_,
+.hljs-selector-id,
+.hljs-selector-id_ { color: #FCD34D; }
+.hljs-string,
+.hljs-string_,
+.hljs-regexp,
+.hljs-regexp_,
+.hljs-addition,
+.hljs-addition_,
+.hljs-char,
+.hljs-char_ { color: #86EFAC; }
+.hljs-comment,
+.hljs-comment_,
+.hljs-meta,
+.hljs-meta_,
+.hljs-quote,
+.hljs-quote_,
+.hljs-doctag,
+.hljs-doctag_ { color: #9FB6CA; }
+.hljs-params,
+.hljs-params_,
+.hljs-operator,
+.hljs-operator_,
+.hljs-emphasis,
+.hljs-emphasis_,
+.hljs-subst,
+.hljs-subst_ { color: #E8F1F8; }
+.hljs-attr,
+.hljs-attr_,
+.hljs-attribute,
+.hljs-attribute_ { color: #C4B5FD; }
+.hljs-variable,
+.hljs-variable_,
+.hljs-symbol,
+.hljs-symbol_,
+.hljs-template-variable,
+.hljs-template-variable_ { color: #F3B4C8; }
+.hljs-punctuation,
+.hljs-punctuation_ { color: #B6CCDE; }
+.hljs-deletion,
+.hljs-deletion_ { color: #FCA5A5; }
+.hljs-strong,
+.hljs-strong_ { color: #FFFFFF; }
+.hljs-link,
+.hljs-link_ { color: #93C5FD; }
+</style>
+</head>
+<body>
+<a class="sr-only" href="#stage">Skip to slides</a>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+<main id="stage" data-deck-id="week01-session">
+<section class="slide slide--title" data-layout="title" data-phase="review" data-source-block="A" data-source-slide="1" data-title="" aria-label="Slide 1: title">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;Short review</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>1</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><p class="kicker">CSC 436 — Web Application Systems</p>
+<h1>Course Intro and the Network Underneath</h1>
+<p class="sub">Review, preparation, logistics, teaching, individual practice, and the end-of-class brief</p>
+<div class="title-meta"><span class="chip"><b>Week 1</b> · Full session</span><span class="chip">180 minutes</span><span class="chip">Updated 2026-09-05</span></div>
+<p>Before we examine any individual part, let&#39;s tell the <strong>whole story</strong> — in plain language, with every term defined as it appears.</p>
+</div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="review" data-source-block="A" data-source-slide="2" data-title="Two laptops, one destination" aria-label="Slide 2: Two laptops, one destination">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;Short review</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>2</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Two laptops, one destination</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>An illustrative classroom scenario: one simple goal, many cooperating systems.</p>
+</aside><div class="cols"><div class="col"><h3>Maya&#39;s Mac</h3>
+<ul>
+<li>Joins the classroom Wi-Fi</li>
+<li>Enters <code>https://www.depaul.edu</code></li>
+<li>Opens the home page and follows a link</li>
+</ul>
+</div><div class="col"><h3>Luis&#39;s Windows laptop</h3>
+<ul>
+<li>Joins the same classroom Wi-Fi</li>
+<li>Enters the same web address</li>
+<li>Wants the same usable page</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--bullets has-sources" data-layout="bullets" data-phase="logistics" data-source-block="A" data-source-slide="3" data-title="Where the course rules live" aria-label="Slide 3: Where the course rules live">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;Weekly logistics</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>3</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Where the course rules live</h1>
+<ul>
+<li><strong>The syllabus is the rulebook.</strong> Schedule, grading, deadlines, and policies live there, and we walk through it separately today</li>
+<li><strong>These slides never replace it.</strong> If a slide and the syllabus ever disagree, the syllabus wins</li>
+<li><strong>Two companion documents:</strong> the AI-use policy, and the evidence standard that defines what counts as proof in this course</li>
+<li><strong>Unresolved questions go to the discussion board,</strong> so an answer is written down once for everybody</li>
+</ul>
+
+<aside class="callout callout--tip" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">✦</span><span>Tip</span></p><p><strong>Logistics questions: now</strong>, before we start the journey. After this slide we are on the technical material.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../../../docs/new_syllabus.md">syllabus</a> · <a href="../../../docs/ai-use-policy.md">AI use policy</a> · <a href="../../../docs/evidence-standard.md">evidence standard</a></li></ul></div>
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="4" data-title="The map we will keep coming back to" aria-label="Slide 4: The map we will keep coming back to">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>4</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>The map we will keep coming back to</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 280" role="img" aria-label="Five stages: join a network, get settings, find the website, exchange a page, and use the page">
+  <defs><marker id="deck-s4-g1-journey-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="10" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="250" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="490" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="730" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="970" y="58" width="200" height="140" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <g fill="#F3F8FC" font-size="27" font-weight="700">
+      <text x="110" y="106">Join</text><text x="350" y="106">Get settings</text><text x="590" y="106">Find the site</text><text x="830" y="106">Exchange</text><text x="1070" y="106">Use the page</text>
+    </g>
+    <g fill="#B6CCDE" font-size="21">
+      <text x="110" y="153">A local connection</text><text x="350" y="153">An address + help</text><text x="590" y="153">A name + a route</text><text x="830" y="153">A request + reply</text><text x="1070" y="153">Display + behavior</text>
+    </g>
+    <g stroke="#B6CCDE" stroke-width="3" marker-end="url(#deck-s4-g1-journey-arrow)">
+      <path d="M214 128 H242"/><path d="M454 128 H482"/><path d="M694 128 H722"/><path d="M934 128 H962"/>
+    </g>
+  </g>
+</svg></div><figcaption>A fresh visit, grouped into five stages. Later slides unpack the jobs inside each stage.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="5" data-title="Four words about where your request goes" aria-label="Slide 5: Four words about where your request goes">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>5</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about where your request goes</h1>
+<div class="table-wrap"><table><thead><tr><th>Word</th><th>What it means, in one sentence</th></tr></thead><tbody><tr><td>Network</td><td>A set of connected devices that can send messages to each other.</td></tr><tr><td>The Internet</td><td>An enormous collection of networks that agreed to pass each other&#39;s messages.</td></tr><tr><td>IP address</td><td>The numeric address a device uses on a network, so replies can find their way back.</td></tr><tr><td>Gateway (router)</td><td>The device on your network that forwards traffic to destinations outside it.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>These words name the route a request takes: your computer starts on one network, and its gateway sends it toward another.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="6" data-title="Four words about what your request asks for" aria-label="Slide 6: Four words about what your request asks for">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>6</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about what your request asks for</h1>
+<div class="table-wrap"><table><thead><tr><th>Word</th><th>What it means, in one sentence</th></tr></thead><tbody><tr><td>Domain name</td><td>The human-friendly name of a site, such as <code>www.depaul.edu</code>.</td></tr><tr><td>Client and server</td><td>The client asks for something (your browser); the server answers (the website&#39;s computer).</td></tr><tr><td>HTTP / HTTPS</td><td>The rules browsers and servers use to ask for and return pages. HTTPS is the private version.</td></tr><tr><td>Resource</td><td>Any single item a page is made of: the page text, an image, a font, a stylesheet.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>None of these words describe <em>how</em> anything works yet. They are labels for the parts, so the story below has names to use.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="7" data-title="1. Join a local network" aria-label="Slide 7: 1. Join a local network">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>7</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>1. Join a local network</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>&quot;Connected to Wi-Fi&quot; means a local connection exists. It does not prove the website works.</p>
+</aside><div class="cols"><div class="col"><h3>On the computer</h3>
+<ul>
+<li>Choose Wi-Fi, or connect a network cable</li>
+<li>The network adapter establishes a local connection</li>
+<li>Supply a password or sign-in if required</li>
+</ul>
+</div><div class="col"><h3>On the local network</h3>
+<ul>
+<li>An access point or switch connects the device</li>
+<li>Network policy decides what access is permitted</li>
+<li>Some networks require an additional sign-in page</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="8" data-title="2. The computer gets its bearings" aria-label="Slide 8: 2. The computer gets its bearings">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>8</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>2. The computer gets its bearings</h1>
+<p><strong>A local connection still needs usable network settings.</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Information</th><th>The question it answers</th></tr></thead><tbody><tr><td>This device&#39;s address</td><td>Where should replies go?</td></tr><tr><td>Local destinations</td><td>Which neighbors can I reach directly?</td></tr><tr><td>Default gateway</td><td>Who helps me reach other networks?</td></tr><tr><td>Name-lookup service</td><td>Who helps find the website&#39;s address?</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>&quot;Settings&quot; here means four answers your computer needs before it can talk to anything: who it is, who is nearby, who forwards its traffic outward, and who translates names into addresses.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="9" data-title="3. Tell the browser where you want to go" aria-label="Slide 9: 3. Tell the browser where you want to go">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>9</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>3. Tell the browser where you want to go</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 320" role="img" aria-label="Browser address bar showing https://www.depaul.edu, with labels for a private web visit, the site name, and the home page">
+  <g font-family="Arial, sans-serif">
+    <rect x="28" y="20" width="1124" height="90" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <text x="70" y="78" font-size="38" fill="#F3F8FC">https://www.depaul.edu</text>
+    <rect x="28" y="154" width="342" height="125" rx="12" fill="#102C40" stroke="#5B82A6"/>
+    <rect x="418" y="154" width="342" height="125" rx="12" fill="#102C40" stroke="#5B82A6"/>
+    <rect x="808" y="154" width="344" height="125" rx="12" fill="#102C40" stroke="#5B82A6"/>
+    <g font-size="27" font-weight="700" fill="#5EEAD4" text-anchor="middle">
+      <text x="199" y="199">https</text><text x="589" y="199">www.depaul.edu</text><text x="980" y="199">No page path entered</text>
+    </g>
+    <g font-size="23" fill="#B6CCDE" text-anchor="middle">
+      <text x="199" y="244">A private web conversation</text><text x="589" y="244">The site we want</text><text x="980" y="244">Start at the home page</text>
+    </g>
+  </g>
+</svg>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>That whole line is a <strong>URL</strong> — a web address. It names the rules to use (<code>https</code>), the site to talk to (<code>www.depaul.edu</code>), and optionally which page (nothing here, so: the home page).</p>
+</aside></div><figcaption>The browser interprets the address before asking for the page.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="10" data-title="4. Find an address for the name" aria-label="Slide 10: 4. Find an address for the name">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>10</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>4. Find an address for the name</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The name-lookup service is called <strong>DNS</strong>, the Domain Name System: a directory that turns a name people can remember into an address machines can use. Looking up the address is not the same job as downloading the page.</p>
+</aside><div class="cols"><div class="col"><h3>The computer asks</h3>
+<ul>
+<li>The human-friendly name is <code>www.depaul.edu</code></li>
+<li>Communication needs a network destination</li>
+<li>The browser or operating system may already know a usable answer</li>
+</ul>
+</div><div class="col"><h3>A lookup service helps</h3>
+<ul>
+<li>If needed, it finds an address for the name</li>
+<li>There may be more than one usable address</li>
+<li>Answers can change while the familiar name stays the same</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="11" data-title="5. Get from the laptop to the way out" aria-label="Slide 11: 5. Get from the laptop to the way out">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>11</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>5. Get from the laptop to the way out</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 320" role="img" aria-label="A laptop sends traffic through a local access point or switch to a gateway, which connects to the wider Internet">
+  <defs><marker id="deck-s11-g1-local-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5EEAD4"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="20" y="70" width="230" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="325" y="70" width="230" height="140" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="630" y="70" width="230" height="140" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="935" y="70" width="225" height="140" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <g font-size="25" font-weight="700" fill="#F3F8FC">
+      <text x="135" y="120">Laptop</text><text x="440" y="120">Local connection</text><text x="745" y="120">Gateway</text><text x="1047" y="120">Internet</text>
+    </g>
+    <g font-size="21" fill="#B6CCDE">
+      <text x="135" y="166">Browser and OS</text><text x="440" y="166">Access point or switch</text><text x="745" y="166">The way out</text><text x="1047" y="166">Other networks</text>
+    </g>
+    <g stroke="#5EEAD4" stroke-width="3" marker-end="url(#deck-s11-g1-local-arrow)">
+      <path d="M255 142 H315"/><path d="M560 142 H620"/><path d="M865 142 H925"/>
+    </g>
+    <text x="590" y="272" font-size="24" fill="#B6CCDE">One physical box can perform more than one of these jobs.</text>
+  </g>
+</svg></div><figcaption>For a remote website, the computer hands outgoing traffic to a local gateway.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--table has-sources" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="12" data-title="6. Networks carry the conversation" aria-label="Slide 12: 6. Networks carry the conversation">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>12</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>6. Networks carry the conversation</h1>
+<p><strong>One visit crosses several networks, not a direct wire.</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Part of the path</th><th>Its job</th></tr></thead><tbody><tr><td>Local network</td><td>Carry traffic to the way out</td></tr><tr><td>Gateway</td><td>Cross the network boundary and route replies</td></tr><tr><td>Internet routers</td><td>Forward toward the destination</td></tr><tr><td>Website&#39;s network</td><td>Deliver traffic to the web service</td></tr></tbody></table></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>MDN — <a href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/How_does_the_Internet_work">How does the Internet work?</a></li></ul></div>
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="13" data-title="7–8. Start a conversation, then ask" aria-label="Slide 13: 7–8. Start a conversation, then ask">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>13</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>7–8. Start a conversation, then ask</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Being able to talk to the site and asking for a particular page are different steps. <strong>HTTPS</strong> means the conversation is scrambled in transit, so people between you and the site can see that you are talking to it, but not what you sent.</p>
+</aside><div class="cols"><div class="col"><h3>Get ready to talk</h3>
+<ul>
+<li>The browser reaches a service for the website</li>
+<li>For this HTTPS visit, it prepares a private conversation with the intended site</li>
+<li>A previously established conversation may be reusable</li>
+</ul>
+</div><div class="col"><h3>Ask for the page</h3>
+<ul>
+<li>The browser requests the site&#39;s home page</li>
+<li>It can include context such as a language preference or a previous visit</li>
+<li>The service decides how to answer</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="14" data-title="9. The website's front door decides" aria-label="Slide 14: 9. The website's front door decides">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>14</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>9. The website&#39;s front door decides</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 340" role="img" aria-label="A website front door receives a page request and may return a saved copy or ask the application to produce a response">
+  <defs><marker id="deck-s14-g1-site-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="20" y="110" width="250" height="110" rx="14" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <rect x="375" y="110" width="320" height="110" rx="14" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <rect x="835" y="35" width="320" height="110" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <rect x="835" y="220" width="320" height="110" rx="14" fill="#17364E" stroke="#FCD34D" stroke-width="2"/>
+    <g font-size="29" fill="#F3F8FC" font-weight="700">
+      <text x="145" y="158">Page request</text><text x="535" y="158">Website front door</text><text x="995" y="82">Saved copy</text><text x="995" y="267">Application</text>
+    </g>
+    <g font-size="22" fill="#B6CCDE">
+      <text x="145" y="192">From the visitor</text><text x="535" y="192">Choose a response</text><text x="995" y="117">When reuse is allowed</text><text x="995" y="302">When work is needed</text>
+    </g>
+    <g stroke="#B6CCDE" stroke-width="3" fill="none" marker-end="url(#deck-s14-g1-site-arrow)">
+      <path d="M275 166 H365"/><path d="M700 150 L825 90"/><path d="M700 184 L825 274"/>
+    </g>
+  </g>
+</svg></div><figcaption>An illustrative website architecture, not a verified diagram of DePaul's current deployment.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="15" data-title="10. The application may need information" aria-label="Slide 15: 10. The application may need information">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>15</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>10. The application may need information</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The browser normally talks to the web service, not directly to the service&#39;s private database.</p>
+</aside><div class="cols"><div class="col"><h3>A ready-made page</h3>
+<ul>
+<li>Content may already exist as a file</li>
+<li>The service can return it without assembling new information</li>
+<li>Not every visit requires a database query</li>
+</ul>
+</div><div class="col"><h3>A page assembled for a request</h3>
+<ul>
+<li>The application may read stored content or another service</li>
+<li>It may check what the visitor is allowed to see</li>
+<li>It creates a response for the browser</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="16" data-title="11. A response makes the return trip" aria-label="Slide 16: 11. A response makes the return trip">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>16</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>11. A response makes the return trip</h1>
+<p><strong>A delivered response is not yet a usable page.</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Participant</th><th>Next job</th></tr></thead><tbody><tr><td>Web service</td><td>Send content, a new location, or a problem</td></tr><tr><td>Return-path networks</td><td>Carry the response back</td></tr><tr><td>Local network and computer</td><td>Deliver to the right device and application</td></tr><tr><td>Browser</td><td>Decide what to do with the response</td></tr></tbody></table></div></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="17" data-title="12. Request the other pieces" aria-label="Slide 17: 12. Request the other pieces">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>17</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>12. Request the other pieces</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The first response is not necessarily the whole page. One visit can involve many requests. A <strong>saved copy</strong> — a cache — is a local copy kept from an earlier visit so the same item does not have to be fetched twice.</p>
+</aside><div class="cols"><div class="col"><h3>The page can ask for more</h3>
+<ul>
+<li>Images and fonts</li>
+<li>Appearance rules and application code</li>
+<li>Fresh information needed by the page</li>
+</ul>
+</div><div class="col"><h3>Earlier jobs can happen again</h3>
+<ul>
+<li>Another resource may be on another service</li>
+<li>Some resources can be reused from saved copies</li>
+<li>Several requests can be in progress together</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="A" data-source-slide="18" data-title="13. The browser makes the page" aria-label="Slide 18: 13. The browser makes the page">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>18</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>13. The browser makes the page</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 310" role="img" aria-label="Page structure, appearance, images, and behavior feed into the browser to produce the visible usable page">
+  <defs><marker id="deck-s18-g1-page-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/></marker></defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <g fill="#17364E" stroke="#5B82A6" stroke-width="2">
+      <rect x="25" y="20" width="235" height="105" rx="12"/><rect x="300" y="20" width="235" height="105" rx="12"/>
+      <rect x="25" y="180" width="235" height="105" rx="12"/><rect x="300" y="180" width="235" height="105" rx="12"/>
+    </g>
+    <g font-size="27" fill="#5EEAD4" font-weight="700">
+      <text x="142" y="65">Structure</text><text x="417" y="65">Appearance</text><text x="142" y="225">Images</text><text x="417" y="225">Behavior</text>
+    </g>
+    <g font-size="22" fill="#B6CCDE">
+      <text x="142" y="103">What is on the page</text><text x="417" y="103">How it looks</text><text x="142" y="263">Visual content</text><text x="417" y="263">What interactions do</text>
+    </g>
+    <path d="M555 152 H680" stroke="#B6CCDE" stroke-width="4" marker-end="url(#deck-s18-g1-page-arrow)"/>
+    <rect x="715" y="40" width="435" height="230" rx="16" fill="#102C40" stroke="#FCD34D" stroke-width="3"/>
+    <rect x="740" y="66" width="385" height="33" rx="5" fill="#17364E"/>
+    <rect x="740" y="122" width="130" height="110" rx="5" fill="#214867"/>
+    <path d="M895 130 H1110 M895 158 H1110 M895 186 H1070" stroke="#B6CCDE" stroke-width="10"/>
+    <text x="932" y="300" font-size="24" fill="#F3F8FC">A page you can see and use</text>
+  </g>
+</svg>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>These four jobs have names you will use for ten weeks: <strong>HTML</strong> is the structure, <strong>CSS</strong> is the appearance, images are the media, and <strong>JavaScript</strong> is the behavior. The browser combines them into the page you see.</p>
+</aside></div><figcaption>The browser turns received resources into a page. Work can overlap as resources arrive.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="19" data-title="14. Visible is not always ready to use" aria-label="Slide 19: 14. Visible is not always ready to use">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>19</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>14. Visible is not always ready to use</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Our destination is a usable experience, not just a successful connection.</p>
+</aside><div class="cols"><div class="col"><h3>Something is on the screen</h3>
+<ul>
+<li>Text and a logo may already be visible</li>
+<li>Some work may still be in progress</li>
+<li>Appearance alone does not prove every feature works</li>
+</ul>
+</div><div class="col"><h3>The visitor can do the job</h3>
+<ul>
+<li>Links and controls respond</li>
+<li>Needed information is available</li>
+<li>An action may start another request-and-response cycle</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="A" data-source-slide="20" data-title="Three milestones, not one checkbox" aria-label="Slide 20: Three milestones, not one checkbox">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>20</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Three milestones, not one checkbox</h1>
+<div class="table-wrap"><table><thead><tr><th>What the student observes</th><th>What it establishes</th><th>What it does not establish</th></tr></thead><tbody><tr><td>Wi-Fi says connected</td><td>A local connection</td><td>Access to every Internet destination</td></tr><tr><td>Another website opens</td><td>At least one usable path and service</td><td>DePaul&#39;s site is available</td></tr><tr><td>DePaul&#39;s home page appears</td><td>Enough work completed to display it</td><td>Every link and feature is usable</td></tr></tbody></table></div></div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="A" data-source-slide="21" data-title="Mac or Windows: the same jobs" aria-label="Slide 21: Mac or Windows: the same jobs">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>21</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Mac or Windows: the same jobs</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Later examples include Windows PowerShell and macOS Terminal (zsh or bash). Follow your OS, not both.</p>
+</aside><div class="cols"><div class="col"><h3>What stays the same</h3>
+<ul>
+<li>Join and configure a network connection</li>
+<li>Find and communicate with the site</li>
+<li>Receive resources, display a page, and respond to the user</li>
+</ul>
+</div><div class="col"><h3>What can look different</h3>
+<ul>
+<li>Settings screens and permission prompts</li>
+<li>Terminal commands and diagnostic output</li>
+<li>Browser menus and developer tools</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--quote" data-layout="quote" data-phase="content" data-source-block="A" data-source-slide="22" data-title="" aria-label="Slide 22: quote">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>22</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><blockquote>From 'I can visit a website' to 'I can explain and operate what makes a web application work.'</blockquote><p class="attrib">— The course destination</p></div></div>
+
+
+</section>
+<section class="slide slide--checkpoint" data-layout="checkpoint" data-phase="content" data-source-block="A" data-source-slide="23" data-title="Tell the story without the tools" aria-label="Slide 23: Tell the story without the tools">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·A</b> &nbsp;The whole journey</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>23</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><p class="cp-banner"><span aria-hidden="true">◇</span> Active checkpoint</p>
+<h1>Tell the story without the tools</h1>
+
+<div class="cp-meta"><span><b>10 min</b></span><span>Solo (3 min) → self-check against the model map (4 min) → instructor debrief (3 min)</span></div>
+<ol>
+<li>Draw the journey from joining Wi-Fi to using DePaul&#39;s home page. Include the computer, local network, Internet, and website.</li>
+<li>Mark one job before the page request and one job after the first response arrives.</li>
+<li>Why can &quot;Wi-Fi connected&quot; be true while the page is not usable?</li>
+</ol>
+</div></div>
+
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="content" data-source-block="B" data-source-slide="1" data-title="Getting on the network" aria-label="Slide 24: Getting on the network">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>24</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Getting on the network</h1>
+<p>How a machine acquires an identity, finds its neighbours, and reaches everything else — and why none of it is visible from your source code</p>
+<p>Block A mapped the whole visit. Now we zoom into its first stages: joining and using the local network. Before your application communicates, the computer needs an identity, a local map, a way out, and help finding names.</p>
+</div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="B" data-source-slide="2" data-title="Fictional CampusPulse case: reachable from here, invisible from there" aria-label="Slide 25: Fictional CampusPulse case: reachable from here, invisible from there">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>25</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Fictional CampusPulse case: reachable from here, invisible from there</h1>
+<div class="cols"><div class="col"><h3>Maya&#39;s laptop</h3>
+<ul>
+<li>DHCP assigns <code>10.24.18.73/20</code></li>
+<li>The gateway is <code>10.24.16.1</code>; DNS is <code>10.20.0.53</code></li>
+<li>CampusPulse answers at <code>localhost:8080</code></li>
+</ul>
+</div><div class="col"><h3>Luis&#39;s laptop</h3>
+<ul>
+<li><code>curl</code> to <code>10.24.18.73:8080</code> gets <strong>connection refused</strong></li>
+<li>The listener table reveals <code>127.0.0.1:8080</code>, not the Wi-Fi address</li>
+<li>One bind setting, not the React code, decides who can connect</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="content" data-source-block="B" data-source-slide="3" data-title="Four questions, answered before your code exists" aria-label="Slide 26: Four questions, answered before your code exists">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>26</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four questions, answered before your code exists</h1>
+<ul>
+<li><strong>Who am I?</strong> — an address this machine is allowed to use</li>
+<li><strong>Who is nearby?</strong> — which addresses it can reach without help</li>
+<li><strong>How do I get out?</strong> — where to send everything else</li>
+<li><strong>Who answers names?</strong> — which server turns text into an address</li>
+</ul>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Your application answers none of these. It inherits all four answers, from a
+server it never authenticated to, over a protocol it never chose.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="4" data-title="Four words about joining a local network" aria-label="Slide 27: Four words about joining a local network">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>27</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about joining a local network</h1>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>DHCP</td><td>The protocol a network uses to hand a newly joined device its address and settings.</td></tr><tr><td>Lease</td><td>The time-limited grant of that address. It expires, is renewed, and can change.</td></tr><tr><td>MAC address</td><td>A hardware address burned into a network adapter. Used only within one local network.</td></tr><tr><td>ARP</td><td>The &quot;who has this address?&quot; question a device shouts locally to find a neighbour&#39;s MAC address.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>DHCP gives a new device its starting information. ARP then helps it find another device on the same local network.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="5" data-title="Four words about choosing the next hop" aria-label="Slide 28: Four words about choosing the next hop">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>28</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about choosing the next hop</h1>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Subnet mask</td><td>The rule that says which addresses count as local neighbours and which do not.</td></tr><tr><td>CIDR (<code>/20</code>)</td><td>A shorthand for that same rule: how many leading bits of the address identify the network.</td></tr><tr><td>On-link</td><td>A destination you can reach directly, without asking the gateway to forward it.</td></tr><tr><td>Gateway</td><td>The device you hand traffic to when the destination is not on-link.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Every mechanism in the next fifteen minutes is one of these eight words in action. You are not expected to know them yet.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="6" data-title="What your machine will tell you" aria-label="Slide 29: What your machine will tell you">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>29</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>What your machine will tell you</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows ipconfig /all - captured and sanitized</span><span class="lang">console</span></figcaption><pre><code><span class="row">   Physical Address. . . . . : 00-0D-3A-XX-XX-XX     # layer 2 identity</span><span class="row">   DHCP Enabled. . . . . . . : Yes                   # &lt;- negotiated</span><span class="row">   IPv4 Address. . . . . . . : 10.0.20.252           # 1. who am I</span><span class="row">   Subnet Mask . . . . . . . : 255.255.128.0         # 2. who is nearby</span><span class="row">   Default Gateway . . . . . : 10.0.0.1              # 3. how do I get out</span><span class="row">   DHCP Server . . . . . . . : 168.63.129.16         # who told me all this</span><span class="row">   DNS Servers . . . . . . . : 10.0.254.4            # 4. who answers names</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Gateway, DHCP server, resolver: <strong>three different jobs</strong>. A home router may do
+all three, but they need not share an address.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/network-config.txt">full annotated capture</a></li><li>Microsoft — <a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">what 168.63.129.16 is</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="7" data-title="Windows: inspect the active connection" aria-label="Slide 30: Windows: inspect the active connection">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>30</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Windows: inspect the active connection</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - any directory; read-only</span><span class="lang">powershell</span></figcaption><pre><code><span class="row">ipconfig /all</span><span class="row"><span class="hljs-built_in">Get-NetIPConfiguration</span></span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Find the active adapter&#39;s address, prefix or mask, gateway, and DNS servers. Do not copy the sample&#39;s addresses.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Microsoft — <a href="https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration">Get-NetIPConfiguration</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="8" data-title="macOS: find the interface and address" aria-label="Slide 31: macOS: find the interface and address">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>31</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS: find the interface and address</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; any directory; read-only</span><span class="lang">bash</span></figcaption><pre><code><span class="row">networksetup -listallhardwareports</span><span class="row"><span class="hljs-built_in">printf</span> <span class="hljs-string">'Device for active Wi-Fi/Ethernet (from list): '</span></span><span class="row"><span class="hljs-built_in">read</span> -r iface</span><span class="row">ipconfig getifaddr <span class="hljs-string">&quot;</span><span class="hljs-variable">$iface</span><span class="hljs-string">&quot;</span></span><span class="row">ipconfig getpacket <span class="hljs-string">&quot;</span><span class="hljs-variable">$iface</span><span class="hljs-string">&quot;</span></span><span class="row">ifconfig <span class="hljs-string">&quot;</span><span class="hljs-variable">$iface</span><span class="hljs-string">&quot;</span></span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Do not assume Wi-Fi is en0. Match the hardware port to its Device entry.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="9" data-title="macOS lease fields: the same questions" aria-label="Slide 32: macOS lease fields: the same questions">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>32</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS lease fields: the same questions</h1>
+<p><strong>These fields describe the last IPv4 DHCP response, not every current policy.</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Field in getpacket</th><th>Same question as the Windows capture</th></tr></thead><tbody><tr><td><code>yiaddr</code></td><td>Which IPv4 address was supplied?</td></tr><tr><td><code>subnet_mask</code></td><td>Which destinations are local?</td></tr><tr><td><code>router</code></td><td>Which gateway was supplied?</td></tr><tr><td><code>domain_name_server</code></td><td>Which name servers were supplied?</td></tr></tbody></table></div></div></div>
+
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="10" data-title="macOS: find the gateway and resolvers" aria-label="Slide 33: macOS: find the gateway and resolvers">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>33</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS: find the gateway and resolvers</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; any directory; read-only</span><span class="lang">bash</span></figcaption><pre><code><span class="row">route -n get default</span><span class="row">scutil --dns</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Read gateway and interface in the route; read nameserver and scope in the resolver configuration.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--svg has-sources" data-layout="svg" data-phase="content" data-source-block="B" data-source-slide="11" data-title="How the address arrives: DISCOVER, OFFER, REQUEST, ACK" aria-label="Slide 34: How the address arrives: DISCOVER, OFFER, REQUEST, ACK">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>34</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>How the address arrives: DISCOVER, OFFER, REQUEST, ACK</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 340" role="img" aria-label="A four-message DHCP exchange between client and server: DISCOVER broadcast from 0.0.0.0, OFFER from the server, REQUEST broadcast identifying the chosen server, and ACK confirming the lease">
+  <defs>
+    <marker id="deck-s34-g1-dhcpArw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/>
+    </marker>
+  </defs>
+  <g font-family="Segoe UI, sans-serif">
+    <rect x="20" y="18" width="200" height="56" rx="10" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <text x="120" y="54" fill="#5EEAD4" font-size="25" font-weight="600" text-anchor="middle">client</text>
+    <rect x="960" y="18" width="200" height="56" rx="10" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <text x="1060" y="54" fill="#93C5FD" font-size="25" font-weight="600" text-anchor="middle">DHCP server</text>
+    <path d="M120 80 V320" stroke="#5B82A6" stroke-width="2" stroke-dasharray="4 6"/>
+    <path d="M1060 80 V320" stroke="#5B82A6" stroke-width="2" stroke-dasharray="4 6"/>
+
+    <path d="M124 116 H1052" stroke="#FCD34D" stroke-width="3" marker-end="url(#deck-s34-g1-dhcpArw)"/>
+    <text x="140" y="106" fill="#FCD34D" font-size="23" font-weight="600">1. DISCOVER</text>
+    <text x="360" y="106" fill="#B6CCDE" font-size="20">broadcast · src 0.0.0.0 · "anyone out there?"</text>
+
+    <path d="M1056 168 H128" stroke="#93C5FD" stroke-width="3" marker-end="url(#deck-s34-g1-dhcpArw)"/>
+    <text x="1046" y="158" fill="#93C5FD" font-size="23" font-weight="600" text-anchor="end">2. OFFER</text>
+    <text x="200" y="158" fill="#B6CCDE" font-size="20">"you may have 10.0.20.252, /17, gw 10.0.0.1"</text>
+
+    <path d="M124 220 H1052" stroke="#FCD34D" stroke-width="3" marker-end="url(#deck-s34-g1-dhcpArw)"/>
+    <text x="140" y="210" fill="#FCD34D" font-size="23" font-weight="600">3. REQUEST</text>
+    <text x="360" y="210" fill="#B6CCDE" font-size="20">broadcast again · "I accept, from THAT server"</text>
+
+    <path d="M1056 272 H128" stroke="#86EFAC" stroke-width="3" marker-end="url(#deck-s34-g1-dhcpArw)"/>
+    <text x="1046" y="262" fill="#86EFAC" font-size="23" font-weight="600" text-anchor="end">4. ACK</text>
+    <text x="200" y="262" fill="#B6CCDE" font-size="20">lease confirmed, with a duration</text>
+
+    <text x="590" y="322" fill="#5EEAD4" font-size="21" font-weight="600" text-anchor="middle">the REQUEST is broadcast so every other server learns its offer was declined</text>
+  </g>
+</svg></div><figcaption>DHCP DORA — four messages, two of them broadcast, before the machine has an address to be addressed by</figcaption></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc2131.html">RFC 2131 §3.1, DHCP client-server interaction</a></li></ul></div>
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="content" data-source-block="B" data-source-slide="12" data-title="The lease is not just an address" aria-label="Slide 35: The lease is not just an address">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>35</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>The lease is not just an address</h1>
+<ul>
+<li><strong>Address + mask</strong> — identity, and the definition of &quot;nearby&quot;</li>
+<li><strong>Default gateway</strong> — the way out</li>
+<li><strong>DNS servers</strong> — who resolves names, which is a <em>trust</em> decision made for you</li>
+<li><strong>Lease duration</strong> — this is a rental, and it expires</li>
+<li><strong>NTP, domain, search suffix, routes</strong> — options nobody reads until one breaks</li>
+</ul>
+
+<aside class="callout callout--warning" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▲</span><span>Watch out</span></p><p>A lease that never expires is not normal. On the capture above it ran to the year
+2162 — a platform artifact of a cloud VM. A home router hands out 12 or 24 hours.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--two-column has-sources" data-layout="two-column" data-phase="content" data-source-block="B" data-source-slide="13" data-title="ARP: the frame needs a different address" aria-label="Slide 36: ARP: the frame needs a different address">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>36</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>ARP: the frame needs a different address</h1>
+<div class="cols"><div class="col"><h3>The problem</h3>
+<p>The packet is addressed to <code>10.0.19.7</code>. The <strong>frame</strong> needs a MAC.</p>
+<p>So the host broadcasts <em>&quot;who has 10.0.19.7?&quot;</em> and caches the reply.</p>
+</div><div class="col"><h3>The reality on a cloud network</h3>
+<p>Real <code>arp -a</code>: <code>10.0.0.1</code>, <code>10.0.0.63</code>, <code>10.0.1.52</code>, <code>10.0.7.77</code> — <strong>all four
+map to the same MAC.</strong> No shared wire; the fabric answers for everything.</p>
+
+<aside class="callout callout--note" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▸</span><span>Note</span></p><p>IPv6 replaces ARP with <strong>NDP</strong>. Same job.</p>
+</aside></div></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc826.html">RFC 826, Address Resolution Protocol</a> · <a href="https://www.rfc-editor.org/rfc/rfc4861.html">RFC 4861, Neighbor Discovery</a></li></ul></div>
+
+</section>
+<section class="slide slide--table has-sources" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="14" data-title="Which addresses can exist in public" aria-label="Slide 37: Which addresses can exist in public">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>37</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Which addresses can exist in public</h1>
+<div class="table-wrap"><table><thead><tr><th>CIDR</th><th>Where it works</th><th>You will meet it</th></tr></thead><tbody><tr><td><code>10.0.0.0/8</code></td><td>private only</td><td>cloud VNets, campus</td></tr><tr><td><code>172.16.0.0/12</code></td><td>private only</td><td>Docker, WSL</td></tr><tr><td><code>192.168.0.0/16</code></td><td>private only</td><td>home routers</td></tr><tr><td><code>127.0.0.0/8</code></td><td><strong>this machine only</strong></td><td>the whole problem</td></tr><tr><td><code>169.254.0.0/16</code></td><td>link-local</td><td>DHCP failed; cloud metadata</td></tr><tr><td><code>fe80::/10</code></td><td>link-local IPv6</td><td>every IPv6 interface</td></tr></tbody></table></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc1918.html">RFC 1918, private address allocation</a> · <a href="https://www.rfc-editor.org/rfc/rfc3927.html">RFC 3927, IPv4 link-local</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="15" data-title="CIDR: how many bits are the network?" aria-label="Slide 38: CIDR: how many bits are the network?">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>38</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>CIDR: how many bits are the network?</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>255.255.128.0 is /17 — worked from the real capture</span><span class="lang">text</span></figcaption><pre><code><span class="row">255.255.128.0 = 11111111 11111111 1000 0000 00000000</span><span class="row">                |--- 17 network ---|---- 15 host ----|</span><span class="row">&nbsp;</span><span class="row">  2^15 = 32,768 addresses    10.0.0.0 -&gt; 10.0.127.255</span><span class="row">&nbsp;</span><span class="row">  10.0.19.7   in the /17     -&gt; on-link, ARP for it</span><span class="row">  10.0.200.4  NOT in the /17 -&gt; hand it to the gateway</span><span class="row">  8.8.8.8     nowhere near   -&gt; hand it to the gateway</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The mask is the <strong>if-statement</strong> your machine runs on every outbound packet:
+<em>on-link, or hand it to the gateway?</em></p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="16" data-title="The route table is that if-statement" aria-label="Slide 39: The route table is that if-statement">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>39</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>The route table is that if-statement</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows route print -4 - trimmed; most specific prefix wins</span><span class="lang">console</span></figcaption><pre><code><span class="row">Destination          Gateway        Meaning</span><span class="row">0.0.0.0/0            10.0.0.1       default route</span><span class="row">10.0.0.0/17          On-link        local campus subnet</span><span class="row">127.0.0.0/8          On-link        loopback</span><span class="row">169.254.169.254/32   10.0.0.1       one pinned host</span><span class="row">&nbsp;</span><span class="row">to 10.0.19.7  -&gt; /17 -&gt; ARP for it directly</span><span class="row">to 8.8.8.8    -&gt; /0  -&gt; frame to gateway; IP stays 8.8.8.8</span><span class="row">to 127.0.0.1  -&gt; /8  -&gt; never leaves the kernel</span></code></pre></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/network-config.txt">annotated route table</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="17" data-title="Windows: routes and nearby addresses" aria-label="Slide 40: Windows: routes and nearby addresses">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>40</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Windows: routes and nearby addresses</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - any directory; inspection only</span><span class="lang">powershell</span></figcaption><pre><code><span class="row">route print <span class="hljs-literal">-4</span></span><span class="row">arp <span class="hljs-literal">-a</span></span><span class="row"><span class="hljs-built_in">Get-NetNeighbor</span> <span class="hljs-literal">-AddressFamily</span> IPv6</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Routes choose the next hop. Neighbor entries map nearby network addresses to link addresses.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Microsoft — <a href="https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor">Get-NetNeighbor</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="18" data-title="macOS: routes and nearby addresses" aria-label="Slide 41: macOS: routes and nearby addresses">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>41</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS: routes and nearby addresses</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; any directory; inspection only</span><span class="lang">bash</span></figcaption><pre><code><span class="row">netstat -rn -f inet</span><span class="row">route -n get default</span><span class="row">arp -a</span><span class="row">ndp -an</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Compare Destination, Gateway, and Netif; use ARP for IPv4 neighbors and NDP for IPv6.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="19" data-title="Four words about reaching the Internet" aria-label="Slide 42: Four words about reaching the Internet">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>42</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about reaching the Internet</h1>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Private address</td><td>An address usable only inside one network. Many networks reuse the same private ranges.</td></tr><tr><td>Public address</td><td>A globally unique address that the rest of the Internet can route to.</td></tr><tr><td>NAT</td><td>Rewriting private addresses into one shared public address on the way out, and back on the way in.</td></tr><tr><td>Port</td><td>A number that says which program on a machine a message is for.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>A home or campus network can use private addresses inside, then use NAT to share one public address when it talks to the Internet.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="20" data-title="Four words about a program's connection" aria-label="Slide 43: Four words about a program's connection">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>43</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about a program&#39;s connection</h1>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Socket</td><td>One end of a conversation: an address plus a port.</td></tr><tr><td>Listening socket</td><td>A program waiting for connections on a port.</td></tr><tr><td>Connected socket</td><td>An established conversation between two specific address-and-port pairs.</td></tr><tr><td>Bind address</td><td>The address a program agrees to accept connections on. <code>127.0.0.1</code> means &quot;this machine only&quot;.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p><code>127.0.0.1</code> (also called <code>localhost</code>, or loopback) never leaves your machine. <code>0.0.0.0</code> means &quot;accept on every address I have&quot;.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="B" data-source-slide="21" data-title="NAT: the address you have is not the address you are" aria-label="Slide 44: NAT: the address you have is not the address you are">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>44</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>NAT: the address you have is not the address you are</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 330" role="img" aria-label="Three private machines behind a NAT router that rewrites their source address and port to a single public address before packets reach a server on the internet">
+  <g font-family="Segoe UI, sans-serif">
+    <rect x="16" y="34" width="248" height="42" rx="8" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="140" y="62" fill="#F3F8FC" font-size="20" text-anchor="middle">10.0.20.252 : 49302</text>
+    <rect x="16" y="90" width="248" height="42" rx="8" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="140" y="118" fill="#B6CCDE" font-size="20" text-anchor="middle">10.0.20.117 : 51884</text>
+    <rect x="16" y="146" width="248" height="42" rx="8" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="140" y="174" fill="#B6CCDE" font-size="20" text-anchor="middle">10.0.21.9 : 62410</text>
+    <text x="140" y="222" fill="#5EEAD4" font-size="21" font-weight="600" text-anchor="middle">private · RFC 1918</text>
+    <text x="140" y="250" fill="#B6CCDE" font-size="19" text-anchor="middle">unreachable from outside</text>
+
+    <path d="M268 111 H392" stroke="#B6CCDE" stroke-width="3"/>
+    <rect x="396" y="52" width="300" height="118" rx="12" fill="#0B1B2B" stroke="#FCD34D" stroke-width="3"/>
+    <text x="546" y="88" fill="#FCD34D" font-size="24" font-weight="600" text-anchor="middle">NAPT translator</text>
+    <text x="546" y="122" fill="#B6CCDE" font-size="19" text-anchor="middle">rewrites source ADDRESS</text>
+    <text x="546" y="148" fill="#B6CCDE" font-size="19" text-anchor="middle">and source PORT, both ways</text>
+    <text x="546" y="200" fill="#F3F8FC" font-size="19" text-anchor="middle">10.0.20.252:49302</text>
+    <text x="546" y="226" fill="#5EEAD4" font-size="19" text-anchor="middle">&#8597; table entry, created by YOU &#8597;</text>
+    <text x="546" y="252" fill="#F3F8FC" font-size="19" text-anchor="middle">203.0.113.181:55346</text>
+
+    <path d="M700 111 H824" stroke="#B6CCDE" stroke-width="3"/>
+    <rect x="828" y="52" width="336" height="118" rx="12" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <text x="996" y="90" fill="#93C5FD" font-size="24" font-weight="600" text-anchor="middle">the server</text>
+    <text x="996" y="126" fill="#B6CCDE" font-size="19" text-anchor="middle">sees 203.0.113.181 : 55346</text>
+    <text x="996" y="152" fill="#B6CCDE" font-size="19" text-anchor="middle">and never learns anything else</text>
+    <text x="996" y="212" fill="#FCA5A5" font-size="20" font-weight="600" text-anchor="middle">cannot initiate a connection</text>
+    <text x="996" y="240" fill="#FCA5A5" font-size="20" font-weight="600" text-anchor="middle">back to any box on the left</text>
+
+    <path d="M60 292 H1120" stroke="#5EEAD4" stroke-width="2" stroke-dasharray="6 6"/>
+    <text x="590" y="320" fill="#5EEAD4" font-size="21" font-weight="600" text-anchor="middle">return traffic works only because there is a table entry — and only you could create it</text>
+  </g>
+</svg></div><figcaption>One public address, many private machines, and a translation table only you can open</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--table has-sources" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="22" data-title="The same request, from both ends" aria-label="Slide 45: The same request, from both ends">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>45</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>The same request, from both ends</h1>
+<div class="table-wrap"><table><thead><tr><th></th><th>this host believes</th><th>the server received</th></tr></thead><tbody><tr><td>address</td><td><code>10.0.20.252</code></td><td><code>203.0.113.181</code></td></tr><tr><td>port</td><td><code>49302</code></td><td><code>55346</code></td></tr></tbody></table></div>
+<aside class="callout callout--danger" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">■</span><span>This breaks production</span></p><p>Address <strong>and</strong> port were rewritten in flight — and a second run seconds later left
+from <code>203.0.113.183</code>. The egress is a <strong>pool</strong>, not a box.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/path-and-nat.txt">the full NAT capture</a></li><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc3022.html">RFC 3022, Traditional NAT and NAPT</a></li></ul></div>
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="content" data-source-block="B" data-source-slide="23" data-title="Ports and sockets: two tuples, and the difference matters" aria-label="Slide 46: Ports and sockets: two tuples, and the difference matters">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>46</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Ports and sockets: two tuples, and the difference matters</h1>
+<ul>
+<li>A <strong>listening</strong> socket is <em>(address, port)</em> — two values, e.g. <code>0.0.0.0:8471</code></li>
+<li>A <strong>connected</strong> socket is <em>(local addr, local port, remote addr, remote port)</em> — four</li>
+<li>The four-tuple is why one server port serves thousands of clients unambiguously</li>
+<li>The client never chose its port; the kernel took one from the <strong>ephemeral range</strong></li>
+<li><code>TIME_WAIT</code> is that four-tuple being held after close, not a leak</li>
+</ul>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>A socket is an <strong>address and a port</strong>. If you got the address wrong, the port was
+never the problem.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="24" data-title="One listener, many conversations" aria-label="Slide 47: One listener, many conversations">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>47</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>One listener, many conversations</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>netstat -ano, captured during a live request</span><span class="lang">console</span></figcaption><pre><code><span class="row">  Proto  Local Address          Foreign Address        State</span><span class="row">  TCP    0.0.0.0:8471           0.0.0.0:0              LISTENING   25224</span><span class="row">  TCP    10.0.20.252:62681      10.0.20.252:8471       TIME_WAIT   0</span><span class="row">  TCP    10.0.20.252:62684      10.0.20.252:8471       TIME_WAIT   0</span><span class="row">  TCP    127.0.0.1:62630        127.0.0.1:8471         TIME_WAIT   0</span><span class="row">&nbsp;</span><span class="row">  row 1   TWO values:  (0.0.0.0, 8471)         &lt;- the listener</span><span class="row">  rows 2+ FOUR values: (local, 62681, remote, 8471)</span><span class="row">          server side identical; the CLIENT ports differ</span></code></pre></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/sockets-and-ports.txt">full socket capture</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="25" data-title="One machine, one port, two answers" aria-label="Slide 48: One machine, one port, two answers">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>48</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>One machine, one port, two answers</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>only the bind address changes</span><span class="lang">console</span></figcaption><pre><code><span class="row"><span class="hljs-meta prompt_"># </span><span class="language-bash">bound to 127.0.0.1</span></span><span class="row">TCP  127.0.0.1:8471  LISTENING</span><span class="row">curl 127.0.0.1:8471    -&gt; campuspulse ok</span><span class="row">curl 10.0.20.252:8471  -&gt; Connection refused (same box)</span><span class="row"><span class="hljs-meta prompt_"># </span><span class="language-bash">rebound to 0.0.0.0 — no code changed</span></span><span class="row">TCP  0.0.0.0:8471    LISTENING</span><span class="row">curl 127.0.0.1:8471    -&gt; campuspulse ok</span><span class="row">curl 10.0.20.252:8471  -&gt; campuspulse ok</span></code></pre></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/sockets-and-ports.txt">the full transcript</a></li></ul></div>
+
+</section>
+<section class="slide slide--demo has-sources" data-layout="demo" data-phase="content" data-source-block="B" data-source-slide="26" data-title="Break it live, in ninety seconds" aria-label="Slide 49: Break it live, in ninety seconds">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>49</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><p class="demo-banner"><span aria-hidden="true">▶</span> Live demo</p>
+<h1>Break it live, in ninety seconds</h1>
+
+<div class="demo-grid">
+<div class="demo-col"><div class="demo-panel"><h3>Do this</h3><ol>
+<li>Open A and B at the repo root; choose your OS steps; Node 18+</li>
+<li>Run the loopback-only server and the two requests on the next slides</li>
+<li>Stop it, bind all interfaces, and repeat without changing the URL</li>
+</ol>
+</div></div>
+<div class="demo-col"><div class="demo-panel"><h3>Watch for</h3><ul>
+<li>Loopback: JSON; LAN request fails</li>
+<li>Wildcard: JSON on both if allowed</li>
+</ul>
+</div><div class="demo-panel demo-panel--fallback"><h3>If it fails</h3><p>Open the socket capture on the cleanup slide.</p>
+</div></div>
+</div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/campuspulse-stub.mjs">the stub server</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="27" data-title="Windows A: bind only to loopback" aria-label="Slide 50: Windows A: bind only to loopback">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>50</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Windows A: bind only to loopback</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - repository root; keep Terminal A running</span><span class="lang">powershell</span></figcaption><pre><code><span class="row">node <span class="hljs-literal">--version</span></span><span class="row">node .\weeks\week01\samples\campuspulse<span class="hljs-literal">-stub</span>.mjs <span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span> <span class="hljs-number">8471</span></span></code></pre></figure>
+<aside class="callout callout--note" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▸</span><span>Note</span></p><p>Expect: campuspulse listening on 127.0.0.1:8471.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/campuspulse-stub.mjs">stub arguments and response fields</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="28" data-title="macOS A: bind only to loopback" aria-label="Slide 51: macOS A: bind only to loopback">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>51</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS A: bind only to loopback</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; repository root; Node 18+</span><span class="lang">bash</span></figcaption><pre><code><span class="row">node --version</span><span class="row">node ./weeks/week01/samples/campuspulse-stub.mjs 127.0.0.1 8471</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Expect &quot;campuspulse listening on 127.0.0.1:8471&quot;. Keep this terminal running.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="29" data-title="Windows B: ask two different addresses" aria-label="Slide 52: Windows B: ask two different addresses">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>52</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Windows B: ask two different addresses</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - Terminal B; choose YOUR active LAN IPv4</span><span class="lang">powershell</span></figcaption><pre><code><span class="row">ipconfig</span><span class="row"><span class="hljs-variable">$lan</span> = <span class="hljs-built_in">Read-Host</span> <span class="hljs-string">'Active LAN IPv4, not 127.0.0.1'</span></span><span class="row"><span class="hljs-built_in">Get-NetTCPConnection</span> <span class="hljs-literal">-State</span> Listen <span class="hljs-literal">-LocalPort</span> <span class="hljs-number">8471</span> |</span><span class="row">  <span class="hljs-built_in">Select-Object</span> LocalAddress, LocalPort, OwningProcess</span><span class="row">curl.exe <span class="hljs-literal">--noproxy</span> <span class="hljs-string">'*'</span> <span class="hljs-literal">-sS</span> <span class="hljs-literal">--max-time</span> <span class="hljs-number">3</span> http://<span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span>:<span class="hljs-number">8471</span>/healthz</span><span class="row">curl.exe <span class="hljs-literal">--noproxy</span> <span class="hljs-string">'*'</span> <span class="hljs-literal">-sS</span> <span class="hljs-literal">--max-time</span> <span class="hljs-number">3</span> <span class="hljs-string">&quot;http://</span><span class="hljs-variable">$</span><span class="hljs-string">{lan}:8471/healthz&quot;</span></span><span class="row"><span class="hljs-variable">$LASTEXITCODE</span></span></code></pre></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Microsoft — <a href="https://learn.microsoft.com/powershell/module/nettcpip/get-nettcpconnection"><code>Get-NetTCPConnection</code></a></li><li>Course — <a href="../samples/sockets-and-ports.txt">socket evidence</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="30" data-title="macOS B: ask two different addresses" aria-label="Slide 53: macOS B: ask two different addresses">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>53</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS B: ask two different addresses</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; Terminal B; active LAN IPv4 required</span><span class="lang">bash</span></figcaption><pre><code><span class="row">networksetup -listallhardwareports</span><span class="row"><span class="hljs-built_in">printf</span> <span class="hljs-string">'Active LAN Device from list: '</span>; <span class="hljs-built_in">read</span> -r iface</span><span class="row">lan=$(ipconfig getifaddr <span class="hljs-string">&quot;</span><span class="hljs-variable">$iface</span><span class="hljs-string">&quot;</span>)</span><span class="row"><span class="hljs-built_in">printf</span> <span class="hljs-string">'LAN IPv4: %s\n'</span> <span class="hljs-string">&quot;</span><span class="hljs-variable">$lan</span><span class="hljs-string">&quot;</span></span><span class="row"><span class="hljs-comment"># If blank, stop here and use the offline comparison.</span></span><span class="row">lsof -nP -iTCP:8471 -sTCP:LISTEN</span><span class="row">curl --noproxy <span class="hljs-string">'*'</span> -sS --max-time 3 http://127.0.0.1:8471/healthz</span><span class="row">curl --noproxy <span class="hljs-string">'*'</span> -sS --max-time 3 <span class="hljs-string">&quot;http://</span><span class="hljs-variable">${lan}</span><span class="hljs-string">:8471/healthz&quot;</span></span><span class="row"><span class="hljs-built_in">printf</span> <span class="hljs-string">'exit=%s\n'</span> <span class="hljs-string">&quot;$?&quot;</span></span></code></pre></figure></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="31" data-title="Windows A: change just the listener" aria-label="Slide 54: Windows A: change just the listener">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>54</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Windows A: change just the listener</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - after Ctrl+C in A; repository root</span><span class="lang">powershell</span></figcaption><pre><code><span class="row">node .\weeks\week01\samples\campuspulse<span class="hljs-literal">-stub</span>.mjs <span class="hljs-number">0.0</span>.<span class="hljs-number">0.0</span> <span class="hljs-number">8471</span></span></code></pre></figure>
+<aside class="callout callout--note" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▸</span><span>Note</span></p><p>Now repeat the socket query and both curl requests from the previous slide, unchanged.</p>
+</aside>
+<aside class="callout callout--warning" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▲</span><span>Watch out</span></p><p>Use a trusted lab network. This exposes the synthetic stub on every IPv4 interface.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/campuspulse-stub.mjs">stub server</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="32" data-title="macOS A: change just the listener" aria-label="Slide 55: macOS A: change just the listener">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>55</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS A: change just the listener</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; after Ctrl+C in A; repository root</span><span class="lang">bash</span></figcaption><pre><code><span class="row">node ./weeks/week01/samples/campuspulse-stub.mjs 0.0.0.0 8471</span></code></pre></figure>
+<aside class="callout callout--note" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▸</span><span>Note</span></p><p>In B, repeat <code>lsof</code> and both <code>curl</code> requests. Expect a wildcard listener and, if policy permits, two JSON replies.</p>
+</aside>
+<aside class="callout callout--warning" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▲</span><span>Watch out</span></p><p>Use a trusted lab network. The synthetic stub now listens on every IPv4 interface.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table has-sources" data-layout="table" data-phase="content" data-source-block="B" data-source-slide="33" data-title="What changed for Maya and Luis?" aria-label="Slide 56: What changed for Maya and Luis?">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>56</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>What changed for Maya and Luis?</h1>
+<div class="table-wrap"><table><thead><tr><th>Observation</th><th>Mechanism</th><th>Safe conclusion</th></tr></thead><tbody><tr><td><code>boundTo</code> changes</td><td>The listener accepts more destination addresses</td><td>The bind configuration changed</td></tr><tr><td><code>servedOn</code> differs</td><td>Each request chose an interface address</td><td>Same process, two local paths</td></tr><tr><td><code>peer</code> port differs</td><td>Each client connection gets a source port</td><td>A request is not just a URL</td></tr><tr><td>Luis still cannot connect</td><td>Another boundary may block ingress</td><td>Check policy before changing code</td></tr></tbody></table></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/campuspulse-stub.mjs">response fields</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="34" data-title="Windows: stop the stub, keep the evidence" aria-label="Slide 57: Windows: stop the stub, keep the evidence">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>57</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Windows: stop the stub, keep the evidence</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - Terminal B; repository root; offline</span><span class="lang">powershell</span></figcaption><pre><code><span class="row"><span class="hljs-built_in">Get-Content</span> .\weeks\week01\samples\sockets<span class="hljs-operator">-and</span><span class="hljs-literal">-ports</span>.txt</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Press Ctrl+C in Terminal A to stop the all-interface listener.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="B" data-source-slide="35" data-title="macOS: stop the stub, keep the evidence" aria-label="Slide 58: macOS: stop the stub, keep the evidence">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>58</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS: stop the stub, keep the evidence</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; Terminal B; repository root; offline</span><span class="lang">bash</span></figcaption><pre><code><span class="row"><span class="hljs-built_in">cat</span> ./weeks/week01/samples/sockets-and-ports.txt</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Ctrl+C in Terminal A stops the server. The saved Windows/Linux output is reference evidence, not today&#39;s Mac output.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="content" data-source-block="B" data-source-slide="36" data-title="Why &quot;it works on localhost&quot; means nothing" aria-label="Slide 59: Why &quot;it works on localhost&quot; means nothing">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>59</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Why &quot;it works on localhost&quot; means nothing</h1>
+<ul>
+<li><code>127.0.0.0/8</code> is matched in the route table and <strong>handed back to the kernel</strong></li>
+<li>It does not cross the physical LAN, its router, or its NAT</li>
+<li>A successful loopback request tests the app and a local path, not remote ingress</li>
+<li>A private address needs an explicit external path; NAPT may also rewrite its port</li>
+<li>Every one of those is a thing a reviewer, a friend testing your app, and your users are on the other side of</li>
+</ul>
+
+<aside class="callout callout--danger" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">■</span><span>This breaks production</span></p><p>&quot;It works on my machine&quot; is not a lie. It is a true statement about a code path
+that shares almost nothing with the one your users take.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--checkpoint has-sources" data-layout="checkpoint" data-phase="content" data-source-block="B" data-source-slide="37" data-title="A service works for Priya, but not for Dev. Three artifacts. Diagnose it." aria-label="Slide 60: A service works for Priya, but not for Dev. Three artifacts. Diagnose it.">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·B</b> &nbsp;On the network</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>60</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><p class="cp-banner"><span aria-hidden="true">◇</span> Active checkpoint</p>
+<h1>A service works for Priya, but not for Dev. Three artifacts. Diagnose it.</h1>
+
+<div class="cp-meta"><span><b>10 min</b></span><span>Solo (4 min) → cold call (3 min) → debrief (3 min)</span></div>
+<figure class="codeblock" style="--code-size:25px"><pre><code><span class="row">A)  Priya runs:  netstat -ano | findstr :8080</span><span class="row">    TCP    127.0.0.1:8080    0.0.0.0:0    LISTENING    9134</span><span class="row">&nbsp;</span><span class="row">B)  Dev runs:    curl --max-time 5 http://192.168.1.47:8080/healthz</span><span class="row">    curl: (7) Failed to connect ... Connection refused</span><span class="row">&nbsp;</span><span class="row">C)  Dev runs:    curl --max-time 5 http://192.168.1.47:3000/  -&gt;  200 OK</span></code></pre></figure><p><strong>1.</strong> What is the cause? <strong>2.</strong> Which artifact rules out a completely broken path?
+<strong>3.</strong> Priya says &quot;let&#39;s just use port 80.&quot; What happens?</p>
+</div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/injected-failures/failure-01-refused-from-lan/README.md">supplied failure prompt and artifacts</a></li></ul></div>
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="content" data-source-block="C" data-source-slide="1" data-title="Transport and the URL chain" aria-label="Slide 61: Transport and the URL chain">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>61</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Transport and the URL chain</h1>
+<p>TCP, UDP, and QUIC — then every link between pressing Enter and seeing a pixel, which is the map the rest of this course is drawn on</p>
+<p>Block B got you an address. This block is about what happens after you have one — and then about the twelve steps between pressing Enter and seeing a pixel, which is the map for the next nine weeks.</p>
+</div></div>
+
+
+</section>
+<section class="slide slide--two-column" data-layout="two-column" data-phase="content" data-source-block="C" data-source-slide="2" data-title="Fictional CampusPulse case: the spinner does not tell you which link failed" aria-label="Slide 62: Fictional CampusPulse case: the spinner does not tell you which link failed">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>62</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Fictional CampusPulse case: the spinner does not tell you which link failed</h1>
+<div class="cols"><div class="col"><h3>What Maya sees</h3>
+<ul>
+<li>She taps <strong>Report outage</strong> on the train</li>
+<li>The spinner runs for two seconds, then the page says &quot;Try again&quot;</li>
+<li>Her first diagnosis: &quot;the server is down&quot;</li>
+</ul>
+</div><div class="col"><h3>What the evidence says</h3>
+<ul>
+<li>DNS <strong>18 ms</strong>; TCP <strong>24 ms</strong>; TLS <strong>51 ms</strong></li>
+<li>HTTP returns <strong>200</strong> with JSON in <strong>140 ms</strong></li>
+<li>The browser console shows a JavaScript exception after the bytes arrive</li>
+</ul>
+</div></div></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="C" data-source-slide="3" data-title="Four words about starting a connection" aria-label="Slide 63: Four words about starting a connection">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>63</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about starting a connection</h1>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Protocol</td><td>An agreed set of rules two machines follow so each one understands the other.</td></tr><tr><td>TCP</td><td>The protocol that gives you an ordered, reliable stream of bytes between two programs.</td></tr><tr><td>Handshake</td><td>The short exchange that sets up a connection before any useful data is sent.</td></tr><tr><td>Round trip (RTT)</td><td>The time for a message to reach the other side and its reply to come back.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Before a browser can ask for a page, its connection follows a protocol and usually completes a handshake. RTT measures the wait for one exchange.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--table" data-layout="table" data-phase="content" data-source-block="C" data-source-slide="4" data-title="Four words about keeping a connection safe" aria-label="Slide 64: Four words about keeping a connection safe">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>64</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four words about keeping a connection safe</h1>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Sequence number</td><td>A counter on each byte, so the receiver can reorder and detect what is missing.</td></tr><tr><td>Retransmission</td><td>Sending data again because it was not acknowledged in time.</td></tr><tr><td>TLS</td><td>The layer that encrypts an HTTPS conversation and proves you reached the real site.</td></tr><tr><td>Reset (RST)</td><td>An abrupt &quot;stop, this connection is over&quot; from the other end.</td></tr></tbody></table></div>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>TCP uses sequence numbers and retransmissions to keep data reliable. TLS makes that data private. A reset ends the conversation abruptly.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--svg has-sources" data-layout="svg" data-phase="content" data-source-block="C" data-source-slide="5" data-title="TCP: nobody speaks until both sides have agreed to" aria-label="Slide 65: TCP: nobody speaks until both sides have agreed to">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>65</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>TCP: nobody speaks until both sides have agreed to</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 320" role="img" aria-label="A TCP three-way handshake: client sends SYN with its initial sequence number, server replies SYN-ACK with its own, client sends ACK, and only then does the first request travel">
+  <defs>
+    <marker id="deck-s65-g1-tcpArw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/>
+    </marker>
+  </defs>
+  <g font-family="Segoe UI, sans-serif">
+    <rect x="24" y="14" width="190" height="50" rx="10" fill="#17364E" stroke="#5EEAD4" stroke-width="2"/>
+    <text x="119" y="47" fill="#5EEAD4" font-size="24" font-weight="600" text-anchor="middle">client</text>
+    <rect x="966" y="14" width="190" height="50" rx="10" fill="#17364E" stroke="#93C5FD" stroke-width="2"/>
+    <text x="1061" y="47" fill="#93C5FD" font-size="24" font-weight="600" text-anchor="middle">server</text>
+    <path d="M119 70 V300" stroke="#5B82A6" stroke-width="2" stroke-dasharray="4 6"/>
+    <path d="M1061 70 V300" stroke="#5B82A6" stroke-width="2" stroke-dasharray="4 6"/>
+
+    <path d="M123 112 H1053" stroke="#FCD34D" stroke-width="3" marker-end="url(#deck-s65-g1-tcpArw)"/>
+    <text x="140" y="102" fill="#FCD34D" font-size="22" font-weight="600">SYN</text>
+    <text x="250" y="102" fill="#B6CCDE" font-size="19">seq=x &#183; "here is where my numbering starts"</text>
+
+    <path d="M1057 168 H127" stroke="#93C5FD" stroke-width="3" marker-end="url(#deck-s65-g1-tcpArw)"/>
+    <text x="1040" y="158" fill="#93C5FD" font-size="22" font-weight="600" text-anchor="end">SYN, ACK</text>
+    <text x="250" y="158" fill="#B6CCDE" font-size="19">seq=y, ack=x+1 &#183; "mine, and I heard yours"</text>
+
+    <path d="M123 224 H1053" stroke="#FCD34D" stroke-width="3" marker-end="url(#deck-s65-g1-tcpArw)"/>
+    <text x="140" y="214" fill="#FCD34D" font-size="22" font-weight="600">ACK</text>
+    <text x="250" y="214" fill="#B6CCDE" font-size="19">ack=y+1 &#183; connection ESTABLISHED</text>
+
+    <path d="M123 278 H1053" stroke="#86EFAC" stroke-width="3" stroke-dasharray="8 5" marker-end="url(#deck-s65-g1-tcpArw)"/>
+    <text x="140" y="268" fill="#86EFAC" font-size="22" font-weight="600">GET /</text>
+    <text x="250" y="268" fill="#B6CCDE" font-size="19">the first byte anyone actually wanted &#8212; 1 RTT late</text>
+  </g>
+</svg></div><figcaption>Three packets and one round trip before either side may send a single useful byte</figcaption></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc9293.html">RFC 9293, Transmission Control Protocol</a></li></ul></div>
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="content" data-source-block="C" data-source-slide="6" data-title="What TCP gives you, and what it charges" aria-label="Slide 66: What TCP gives you, and what it charges">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>66</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>What TCP gives you, and what it charges</h1>
+<ul>
+<li><strong>Ordering</strong> — segments carry sequence numbers, so the receiver reassembles the stream</li>
+<li><strong>Retransmission</strong> — an unacknowledged segment is sent again, with exponential backoff</li>
+<li><strong>Flow control</strong> — the receiver advertises a window, so a fast sender cannot drown a slow one</li>
+<li><strong>Congestion control</strong> — the sender backs off when the <em>network</em> is the bottleneck</li>
+<li><strong>The bill:</strong> one round trip of setup, per-connection state on both ends, and head-of-line blocking</li>
+</ul>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>TCP turns an unreliable packet network into a reliable byte stream. Everything on
+this list is the price of that sentence.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="C" data-source-slide="7" data-title="Sequencing and retransmission: how silence is handled" aria-label="Slide 67: Sequencing and retransmission: how silence is handled">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>67</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Sequencing and retransmission: how silence is handled</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 340" role="img" aria-label="A TCP data transfer where segments with sequence numbers 1, 1461 and 2921 are sent, the middle one is lost, the receiver acknowledges only up to 1461 twice, and the sender retransmits with a doubling timeout">
+  <defs>
+    <marker id="deck-s67-g1-seqArw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B6CCDE"/>
+    </marker>
+  </defs>
+  <g font-family="Segoe UI, sans-serif">
+    <text x="118" y="30" fill="#5EEAD4" font-size="21" font-weight="600" text-anchor="middle">sender</text>
+    <text x="1062" y="30" fill="#93C5FD" font-size="21" font-weight="600" text-anchor="middle">receiver</text>
+    <path d="M118 44 V318" stroke="#5B82A6" stroke-width="2" stroke-dasharray="4 6"/>
+    <path d="M1062 44 V318" stroke="#5B82A6" stroke-width="2" stroke-dasharray="4 6"/>
+
+    <path d="M122 82 H1054" stroke="#86EFAC" stroke-width="3" marker-end="url(#deck-s67-g1-seqArw)"/>
+    <text x="330" y="72" fill="#86EFAC" font-size="20">seq=1, 1460 bytes &#8212; delivered</text>
+
+    <path d="M122 126 H610" stroke="#FCA5A5" stroke-width="3" stroke-dasharray="9 6"/>
+    <text x="330" y="116" fill="#FCA5A5" font-size="20">seq=1461, 1460 bytes &#8212; LOST</text>
+    <text x="640" y="134" fill="#FCA5A5" font-size="30" font-weight="700">&#10007;</text>
+
+    <path d="M122 176 H1054" stroke="#86EFAC" stroke-width="3" marker-end="url(#deck-s67-g1-seqArw)"/>
+    <text x="330" y="166" fill="#86EFAC" font-size="20">seq=2921, 1460 bytes &#8212; arrives, held</text>
+
+    <path d="M1058 220 H126" stroke="#93C5FD" stroke-width="3" marker-end="url(#deck-s67-g1-seqArw)"/>
+    <text x="1040" y="210" fill="#93C5FD" font-size="20" text-anchor="end">ack=1461, again &#8212; "still missing this"</text>
+
+    <path d="M122 266 H1054" stroke="#FCD34D" stroke-width="3" marker-end="url(#deck-s67-g1-seqArw)"/>
+    <text x="330" y="256" fill="#FCD34D" font-size="20">seq=1461 RETRANSMITTED &#8212; after RTO</text>
+
+    <text x="590" y="312" fill="#5EEAD4" font-size="21" font-weight="600" text-anchor="middle">no packet says "I failed". the gap in the numbering is the entire signal.</text>
+  </g>
+</svg></div><figcaption>A lost segment is detected by a gap, not by an error — and the retry interval doubles</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--two-column has-sources" data-layout="two-column" data-phase="content" data-source-block="C" data-source-slide="8" data-title="Ending a connection: politely, or not" aria-label="Slide 68: Ending a connection: politely, or not">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>68</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Ending a connection: politely, or not</h1>
+<div class="cols"><div class="col"><h3>FIN — the orderly close</h3>
+<p>Four packets. Either side may stop sending and keep <strong>receiving</strong>, so the close
+is half-duplex first.</p>
+<p><code>TIME_WAIT</code> then holds the four-tuple for 2 × MSL.</p>
+</div><div class="col"><h3>RST — the abort</h3>
+<p>One packet. No agreement, unread data discarded.</p>
+<p><strong>A FIN is an agreement. A RST is a decision.</strong></p>
+
+<aside class="callout callout--warning" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▲</span><span>Watch out</span></p><p>Many <code>TIME_WAIT</code> sockets are normal; exhaustion needs evidence of failed new connections.</p>
+</aside></div></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc9293.html">RFC 9293 §3.6, closing a connection</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="9" data-title="Four symptoms: read the failure, not just the code" aria-label="Slide 69: Four symptoms: read the failure, not just the code">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>69</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four symptoms: read the failure, not just the code</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>same tool, four different layers</span><span class="lang">console</span></figcaption><pre><code><span class="row">127.0.0.1:9        -&gt; (7) refused: RST, host answered no</span><span class="row">192.0.2.1          -&gt; (28) timeout: silence, no answer</span><span class="row">127.0.0.1:8472     -&gt; (56) reset: request sent, then abort</span><span class="row">example.com:443    -&gt; (52) empty reply: orderly FIN</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>In plain words: <strong>refused</strong> means something answered and said no. <strong>Timeout</strong> means nothing answered at all. <strong>Reset</strong> means a conversation had started and was cut off. <strong>Empty reply</strong> means the connection closed politely without sending an answer.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/refused-vs-timeout.txt">the full transcripts and a decision table</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="10" data-title="macOS A: reproduce a local reset" aria-label="Slide 70: macOS A: reproduce a local reset">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>70</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS A: reproduce a local reset</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; repository root; Node 18+</span><span class="lang">bash</span></figcaption><pre><code><span class="row">node ./weeks/week01/samples/abort-server.mjs 8472</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>The loopback-only fixture accepts a connection, reads request bytes, then resets it. Keep A running.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="11" data-title="Reproduce a local reset" aria-label="Slide 71: Reproduce a local reset">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>71</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Reproduce a local reset</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - Terminal A; repository root; Node 18+</span><span class="lang">powershell</span></figcaption><pre><code><span class="row">node .\weeks\week01\samples\abort<span class="hljs-literal">-server</span>.mjs <span class="hljs-number">8472</span></span></code></pre></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/abort-server.mjs">local reset fixture</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="12" data-title="macOS B: find the last completed phase" aria-label="Slide 72: macOS B: find the last completed phase">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>72</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS B: find the last completed phase</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; same machine as Terminal A</span><span class="lang">bash</span></figcaption><pre><code><span class="row">curl --noproxy <span class="hljs-string">'*'</span> -v --max-time 5 http://127.0.0.1:8472/</span><span class="row"><span class="hljs-built_in">printf</span> <span class="hljs-string">'exit=%s\n'</span> <span class="hljs-string">&quot;$?&quot;</span></span><span class="row"><span class="hljs-comment"># Ctrl+C in A; repeat these two commands to compare.</span></span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>While A runs: connected, request sent, then a receive failure. After stopping A: connection fails earlier.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="13" data-title="Terminal B: locate the last successful phase" aria-label="Slide 73: Terminal B: locate the last successful phase">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>73</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Terminal B: locate the last successful phase</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - same machine as Terminal A</span><span class="lang">powershell</span></figcaption><pre><code><span class="row">curl.exe <span class="hljs-literal">--noproxy</span> <span class="hljs-string">'*'</span> <span class="hljs-literal">-v</span> <span class="hljs-literal">--max-time</span> <span class="hljs-number">5</span> http://<span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span>:<span class="hljs-number">8472</span>/</span><span class="row"><span class="hljs-variable">$LASTEXITCODE</span></span><span class="row"><span class="hljs-comment"># Now Ctrl+C in Terminal A; repeat both lines to compare.</span></span></code></pre></figure></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>curl — <a href="https://curl.se/docs/manpage.html">exit codes and verbose diagnostics</a></li><li>Course — <a href="../samples/abort-server.mjs">reset fixture</a></li></ul></div>
+
+</section>
+<section class="slide slide--table has-sources" data-layout="table" data-phase="content" data-source-block="C" data-source-slide="14" data-title="Same spinner; a different next action" aria-label="Slide 74: Same spinner; a different next action">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>74</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Same spinner; a different next action</h1>
+<div class="table-wrap"><table><thead><tr><th>Last evidence</th><th>What happened</th><th>Next diagnostic</th></tr></thead><tbody><tr><td>No <code>Connected</code> line</td><td>The connection did not establish</td><td>Inspect listener, destination, route</td></tr><tr><td><code>Connected</code>, then outgoing GET</td><td>The server accepted the connection</td><td>Inspect reset/crash/proxy evidence</td></tr><tr><td>An HTTP status and headers</td><td>Transport carried an HTTP response</td><td>Read status, body, and app logs</td></tr><tr><td>A timeout after connecting</td><td>A later phase took too long</td><td>Locate the stalled phase; do not blame DNS</td></tr></tbody></table></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../samples/refused-vs-timeout.txt">failure decision table</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="15" data-title="macOS: the same offline comparison" aria-label="Slide 75: macOS: the same offline comparison">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>75</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS: the same offline comparison</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; repository root; offline</span><span class="lang">bash</span></figcaption><pre><code><span class="row"><span class="hljs-built_in">cat</span> ./weeks/week01/samples/refused-vs-timeout.txt</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Ctrl+C in A stops the fixture. The archived output explains the phases; Mac error wording may differ.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="16" data-title="Fallback and cleanup: no firewall experiment" aria-label="Slide 76: Fallback and cleanup: no firewall experiment">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>76</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Fallback and cleanup: no firewall experiment</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - repository root; archived evidence</span><span class="lang">powershell</span></figcaption><pre><code><span class="row"><span class="hljs-built_in">Get-Content</span> .\weeks\week01\samples\refused<span class="hljs-literal">-vs-timeout</span>.txt</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Stop Terminal A with Ctrl+C. Do not create a DROP rule to force a timeout.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--two-column has-sources" data-layout="two-column" data-phase="content" data-source-block="C" data-source-slide="17" data-title="UDP: no handshake, no memory" aria-label="Slide 77: UDP: no handshake, no memory">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>77</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>UDP: no handshake, no memory</h1>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p><strong>UDP</strong> sends single messages, called datagrams, with no setup and no memory of what came before. It is not &quot;broken TCP&quot; — it is TCP with every guarantee removed, so the application can choose which ones it actually wants.</p>
+</aside><div class="cols"><div class="col"><h3>What it does not do</h3>
+<ul>
+<li>No connection, so no setup round trip</li>
+<li>No ordering, no retransmission</li>
+<li>No flow or congestion control</li>
+<li>An 8-byte header, versus TCP&#39;s 20</li>
+</ul>
+</div><div class="col"><h3>When that is the right trade</h3>
+<ul>
+<li><strong>DNS</strong> — 29 bytes; a retry beats a handshake</li>
+<li><strong>DHCP</strong> — you have no address yet</li>
+<li><strong>Audio and video</strong> — late is worse than lost</li>
+<li><strong>QUIC</strong> — rebuilds reliability on top</li>
+</ul>
+</div></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc768.html">RFC 768, User Datagram Protocol</a></li></ul></div>
+
+</section>
+<section class="slide slide--bullets has-sources" data-layout="bullets" data-phase="content" data-source-block="C" data-source-slide="18" data-title="QUIC: the handshake, rebuilt on UDP" aria-label="Slide 78: QUIC: the handshake, rebuilt on UDP">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>78</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>QUIC: the handshake, rebuilt on UDP</h1>
+<ul>
+<li>Runs over <strong>UDP</strong>, then rebuilds ordering, retransmission, and congestion control above it</li>
+<li>Merges the transport and TLS handshakes — <strong>1 RTT</strong> to a new server; <strong>0 RTT</strong> on a <em>resumed</em></li>
+<li>Streams are independent, so one lost packet no longer stalls the <em>others</em></li>
+<li>A connection ID lets a connection <strong>survive</strong> a network change, when both ends support it</li>
+<li><strong>HTTP/3 is HTTP over QUIC</strong>, and it is already a large share of real traffic</li>
+</ul>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p><strong>QUIC</strong> is a newer transport that does TCP&#39;s job and TLS&#39;s job at the same time, carried inside UDP. <strong>RTT</strong> is a round trip; &quot;1 RTT&quot; means one there-and-back before real data flows. <strong>HTTP/3</strong> is simply HTTP delivered over QUIC.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc9000.html">RFC 9000, QUIC transport</a> · <a href="https://www.rfc-editor.org/rfc/rfc9114.html">RFC 9114, HTTP/3</a></li></ul></div>
+
+</section>
+<section class="slide slide--section" data-layout="section" data-phase="content" data-source-block="C" data-source-slide="19" data-title="From URL to pixel" aria-label="Slide 79: From URL to pixel">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>79</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><p class="kicker">The spine of this course</p><div class="rule-accent" aria-hidden="true"></div><h1>From URL to pixel</h1>
+</div></div>
+
+
+</section>
+<section class="slide slide--svg" data-layout="svg" data-phase="content" data-source-block="C" data-source-slide="20" data-title="The chain" aria-label="Slide 80: The chain">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>80</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>The chain</h1>
+<figure class="figure figure--plain"><div class="frame">
+<svg viewBox="0 0 1180 430" role="img" aria-label="The URL to pixel chain in twelve steps across two rows: parse the URL, check caches, resolve DNS, open TCP, TLS handshake, send the HTTP request, edge or CDN, origin server, parse HTML, execute JavaScript, render, and interact. Each step is labelled with the week of the course that covers it.">
+  <defs>
+    <marker id="deck-s80-g1-chArw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5EEAD4"/>
+    </marker>
+  </defs>
+  <g font-family="Segoe UI, sans-serif" text-anchor="middle">
+    <text x="24" y="34" fill="#B6CCDE" font-size="19" text-anchor="start">GETTING THE BYTES</text>
+
+    <rect x="20" y="48" width="176" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="108" y="80" fill="#F3F8FC" font-size="21" font-weight="600">1 &#183; parse URL</text>
+    <text x="108" y="108" fill="#B6CCDE" font-size="18">scheme, host, path</text>
+
+    <rect x="216" y="48" width="176" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="304" y="80" fill="#F3F8FC" font-size="21" font-weight="600">2 &#183; caches</text>
+    <text x="304" y="108" fill="#93C5FD" font-size="18">W5</text>
+
+    <rect x="412" y="48" width="176" height="86" rx="10" fill="#17364E" stroke="#5EEAD4" stroke-width="3"/>
+    <text x="500" y="80" fill="#5EEAD4" font-size="21" font-weight="600">3 &#183; DNS</text>
+    <text x="500" y="108" fill="#5EEAD4" font-size="18">WEEK 2</text>
+
+    <rect x="608" y="48" width="176" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="696" y="80" fill="#F3F8FC" font-size="21" font-weight="600">4 &#183; TCP</text>
+    <text x="696" y="108" fill="#B6CCDE" font-size="18">today</text>
+
+    <rect x="804" y="48" width="176" height="86" rx="10" fill="#17364E" stroke="#FCD34D" stroke-width="3"/>
+    <text x="892" y="80" fill="#FCD34D" font-size="21" font-weight="600">5 &#183; TLS</text>
+    <text x="892" y="108" fill="#FCD34D" font-size="18">WEEK 4</text>
+
+    <rect x="1000" y="48" width="160" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="1080" y="80" fill="#F3F8FC" font-size="21" font-weight="600">6 &#183; HTTP</text>
+    <text x="1080" y="108" fill="#93C5FD" font-size="18">W2</text>
+
+    <path d="M198 91 H212" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M394 91 H408" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M590 91 H604" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M786 91 H800" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M982 91 H996" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M1080 136 V158 H108 V186" stroke="#5EEAD4" stroke-width="2" fill="none" marker-end="url(#deck-s80-g1-chArw)"/>
+
+    <text x="24" y="222" fill="#B6CCDE" font-size="19" text-anchor="start">ANSWERING, THEN DRAWING</text>
+
+    <rect x="20" y="236" width="176" height="86" rx="10" fill="#17364E" stroke="#FCD34D" stroke-width="3"/>
+    <text x="108" y="268" fill="#FCD34D" font-size="21" font-weight="600">7 &#183; edge/CDN</text>
+    <text x="108" y="296" fill="#FCD34D" font-size="18">WEEK 5</text>
+
+    <rect x="216" y="236" width="176" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="304" y="268" fill="#F3F8FC" font-size="21" font-weight="600">8 &#183; origin</text>
+    <text x="304" y="296" fill="#93C5FD" font-size="18">W3 &#183; W7 &#183; W8 &#183; W10</text>
+
+    <rect x="412" y="236" width="176" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="500" y="268" fill="#F3F8FC" font-size="21" font-weight="600">9 &#183; parse HTML</text>
+    <text x="500" y="296" fill="#B6CCDE" font-size="18">the critical path</text>
+
+    <rect x="608" y="236" width="176" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="696" y="268" fill="#F3F8FC" font-size="21" font-weight="600">10 &#183; execute JS</text>
+    <text x="696" y="296" fill="#93C5FD" font-size="18">W3</text>
+
+    <rect x="804" y="236" width="176" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="892" y="268" fill="#F3F8FC" font-size="21" font-weight="600">11 &#183; render</text>
+    <text x="892" y="296" fill="#93C5FD" font-size="18">W5</text>
+
+    <rect x="1000" y="236" width="160" height="86" rx="10" fill="#17364E" stroke="#5B82A6" stroke-width="2"/>
+    <text x="1080" y="268" fill="#F3F8FC" font-size="21" font-weight="600">12 &#183; interact</text>
+    <text x="1080" y="296" fill="#93C5FD" font-size="18">W7</text>
+
+    <path d="M198 279 H212" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M394 279 H408" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M590 279 H604" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M786 279 H800" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+    <path d="M982 279 H996" stroke="#5EEAD4" stroke-width="2" marker-end="url(#deck-s80-g1-chArw)"/>
+
+    <path d="M40 356 H1140" stroke="#5EEAD4" stroke-width="2" stroke-dasharray="6 6"/>
+    <text x="590" y="388" fill="#5EEAD4" font-size="22" font-weight="600">any one link fails and the user sees "the site is down"</text>
+    <text x="590" y="416" fill="#B6CCDE" font-size="20">your application source describes links 8 through 12. the user's experience depends on all twelve.</text>
+  </g>
+</svg>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Three of these names are new: an <strong>edge/CDN</strong> is a server placed near the user that can answer with a stored copy; the <strong>origin</strong> is the machine that actually owns the content; <strong>render</strong> is the browser turning HTML and CSS into pixels on screen.</p>
+</aside></div><figcaption>Twelve links. Every remaining week of this course attaches to one of them.</figcaption></figure></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="21" data-title="The first six links, timed" aria-label="Slide 81: The first six links, timed">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>81</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>The first six links, timed</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:21px"><figcaption><span>Archived Windows curl run - cumulative seconds</span><span class="lang">console</span></figcaption><pre><code><span class="row"><span class="hljs-meta prompt_">$ </span><span class="language-bash">curl -sS -o NUL -w </span><span class="hljs-string">&quot;dns=%{time_namelookup} tcp=%{time_connect}</span></span><span class="row">    tls=%{time_appconnect} ttfb=%{time_starttransfer}</span><span class="row">    total=%{time_total}\n&quot; https://www.depaul.edu/</span><span class="row">&nbsp;</span><span class="row">dns=0.010978  tcp=0.013690  tls=0.246471  ttfb=0.622437  total=0.647152</span><span class="row">&nbsp;</span><span class="row">  link 3   DNS              11 ms    cached; a cold lookup is 20-120 ms</span><span class="row">  link 4   TCP handshake   + 3 ms    one round trip, close by</span><span class="row">  link 5   TLS handshake + 233 ms    the most expensive thing here</span><span class="row">  links 6-8  request, edge, origin, first byte      + 376 ms</span><span class="row">  the remaining 238 KB of body                      +  25 ms</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Four numbers localise a slow page to a link — no profiler, no dashboard, and it
+runs anywhere <code>curl</code> runs.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li><a href="https://curl.se/docs/manpage.html">curl manual — <code>--write-out</code> variables</a></li></ul></div>
+
+</section>
+<section class="slide slide--terminal" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="22" data-title="Windows: measure those same phases" aria-label="Slide 82: Windows: measure those same phases">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>82</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Windows: measure those same phases</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>Windows PowerShell - any directory; internet required</span><span class="lang">powershell</span></figcaption><pre><code><span class="row"><span class="hljs-variable">$fmt</span> = <span class="hljs-string">'dns=%{time_namelookup} tcp=%{time_connect} '</span></span><span class="row"><span class="hljs-variable">$fmt</span> += <span class="hljs-string">'tls=%{time_appconnect} ttfb=%{time_starttransfer} '</span></span><span class="row"><span class="hljs-variable">$fmt</span> += <span class="hljs-string">'total=%{time_total}\n'</span></span><span class="row">curl.exe <span class="hljs-literal">-sS</span> <span class="hljs-literal">-o</span> NUL <span class="hljs-literal">--max-time</span> <span class="hljs-number">15</span> <span class="hljs-literal">-w</span> <span class="hljs-variable">$fmt</span> https://www.depaul.edu/</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>These are cumulative seconds, not five independent durations. Your values need not match the archived capture.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--terminal has-sources" data-layout="terminal" data-phase="content" data-source-block="C" data-source-slide="23" data-title="macOS: measure those same phases" aria-label="Slide 83: macOS: measure those same phases">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>83</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>macOS: measure those same phases</h1>
+<figure class="codeblock codeblock--terminal" style="--code-size:24px"><figcaption><span>macOS Terminal - Bash/zsh; any directory; internet required</span><span class="lang">bash</span></figcaption><pre><code><span class="row"><span class="hljs-built_in">fmt</span>=<span class="hljs-string">'dns=%{time_namelookup} tcp=%{time_connect} '</span></span><span class="row"><span class="hljs-built_in">fmt</span>=<span class="hljs-string">&quot;</span><span class="hljs-variable">${fmt}</span><span class="hljs-string">tls=%{time_appconnect} ttfb=%{time_starttransfer} &quot;</span></span><span class="row"><span class="hljs-built_in">fmt</span>=<span class="hljs-string">&quot;</span><span class="hljs-variable">${fmt}</span><span class="hljs-string">total=%{time_total}\n&quot;</span></span><span class="row">curl -sS -o /dev/null --max-time 15 -w <span class="hljs-string">&quot;</span><span class="hljs-variable">$fmt</span><span class="hljs-string">&quot;</span> https://www.depaul.edu/</span></code></pre></figure>
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Same fields and interpretation; /dev/null replaces Windows NUL. Keep the format variable quoted.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>curl — <a href="https://curl.se/docs/manpage.html">write-out variables</a></li></ul></div>
+
+</section>
+<section class="slide slide--table has-sources" data-layout="table" data-phase="content" data-source-block="C" data-source-slide="24" data-title="Four filters, four links, four artifacts" aria-label="Slide 84: Four filters, four links, four artifacts">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>84</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Four filters, four links, four artifacts</h1>
+<div class="table-wrap"><table><thead><tr><th>Link</th><th>Wireshark display filter</th><th>What you should find</th></tr></thead><tbody><tr><td>3 · DNS</td><td><code>dns</code></td><td>one query, one response, 2 answers, a TTL</td></tr><tr><td>4 · TCP</td><td><code>tcp.flags.syn == 1</code></td><td>exactly two packets: SYN, then SYN+ACK</td></tr><tr><td>5 · TLS</td><td><code>tls.handshake.type == 1</code></td><td>your hostname, <strong>in cleartext</strong></td></tr><tr><td>6 · HTTP</td><td><code>http.request</code></td><td>the <code>Host:</code> header — and <strong>nothing</strong> over HTTPS</td></tr></tbody></table></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Wireshark — <a href="https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDisplayFilterSection.html">display filter reference</a></li><li>Course — <a href="../samples/capture-walkthrough.md">a fully worked annotated capture</a></li></ul></div>
+
+</section>
+<section class="slide slide--two-column has-sources" data-layout="two-column" data-phase="content" data-source-block="C" data-source-slide="25" data-title="One link failed. Everything looked down." aria-label="Slide 85: One link failed. Everything looked down.">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>85</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>One link failed. Everything looked down.</h1>
+<div class="cols"><div class="col"><h3>4 October 2021</h3>
+<p>A routine backbone maintenance
+command was issued to <strong>assess</strong>
+capacity.</p>
+<p>The audit tool had a bug.</p>
+<p>Every Facebook data centre fell
+off the internet.</p>
+</div><div class="col"><h3>What actually broke for users</h3>
+<p>The DNS servers were healthy, but
+their health check could not reach
+the data centres.</p>
+<p>They withdrew their BGP routes.</p>
+
+<aside class="callout callout--danger" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">■</span><span>This breaks production</span></p><p><strong>Link 3 failed; every other link became unreachable.</strong></p>
+</aside></div></div></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Meta Engineering — <a href="https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/">More details about the October 4 outage</a> (primary postmortem)</li></ul></div>
+
+</section>
+<section class="slide slide--bullets has-sources" data-layout="bullets" data-phase="content" data-source-block="C" data-source-slide="26" data-title="Links 9 to 12: the bytes arrived, and nothing is on screen yet" aria-label="Slide 86: Links 9 to 12: the bytes arrived, and nothing is on screen yet">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>86</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Links 9 to 12: the bytes arrived, and nothing is on screen yet</h1>
+<ul>
+<li><strong>Parse</strong> — HTML becomes a DOM; a blocking <code>&lt;script&gt;</code> in <code>&lt;head&gt;</code> stops the parser dead</li>
+<li><strong>Execute</strong> — JavaScript runs, and with client-side rendering <em>nothing</em> is visible until it finishes</li>
+<li><strong>Render</strong> — style, layout, paint, composite; this is where a11y and Core Web Vitals live</li>
+<li><strong>Interact</strong> — the page looks ready but the handlers are not attached yet, so clicks are dropped</li>
+</ul>
+
+<aside class="callout callout--warning" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">▲</span><span>Watch out</span></p><p>&quot;Fast&quot; is not one number. A page can reach first paint in 400 ms and be unusable
+for three seconds. Users report the second one.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>MDN — <a href="https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Navigation_and_resource_timings">Navigation and resource timings</a></li></ul></div>
+
+</section>
+<section class="slide slide--checkpoint has-sources" data-layout="checkpoint" data-phase="content" data-source-block="C" data-source-slide="27" data-title="Four users, four reports. Which link broke, and what evidence settles it?" aria-label="Slide 87: Four users, four reports. Which link broke, and what evidence settles it?">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;The URL chain</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>87</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><p class="cp-banner"><span aria-hidden="true">◇</span> Active checkpoint</p>
+<h1>Four users, four reports. Which link broke, and what evidence settles it?</h1>
+
+<div class="cp-meta"><span><b>10 min</b></span><span>Solo (4 min) → cold call (3 min) → debrief (3 min)</span></div>
+<ol>
+<li>&quot;Server not found.&quot; Their colleague at the next desk loads it fine.</li>
+<li>Padlock warning on a phone; fine on both laptops in the room.</li>
+<li>Page loads instantly but shows yesterday&#39;s incident list.</li>
+<li>Page paints in 300 ms; buttons do nothing for four seconds.</li>
+</ol>
+</div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../../../docs/course-map.md">the URL chain and which week owns each link</a></li></ul></div>
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="practice" data-source-block="C" data-source-slide="28" data-title="Guided lab: capture your own traffic, then break your own port" aria-label="Slide 88: Guided lab: capture your own traffic, then break your own port">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;Individual practice</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>88</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Guided lab: capture your own traffic, then break your own port</h1>
+<ul>
+<li><strong>Now, 35 minutes:</strong> find your machine&#39;s network settings, then capture a real page load</li>
+<li><strong>In the capture:</strong> point at the DNS query, the TCP handshake, the TLS ClientHello, and the first HTTP request</li>
+<li><strong>Then break it on purpose:</strong> stop your own listening port and diagnose refused vs. timed out vs. reset from symptoms alone</li>
+<li><strong>Evidence, not a screenshot:</strong> every step has a saved fallback capture for a restricted machine or VPN</li>
+</ul>
+
+<aside class="callout callout--key" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">◆</span><span>Key idea</span></p><p>Full instructions and fallbacks: <a href="../lab.md"><code>lab.md</code></a>.</p>
+</aside></div></div>
+
+
+</section>
+<section class="slide slide--bullets has-sources" data-layout="bullets" data-phase="homework" data-source-block="C" data-source-slide="29" data-title="HW1: the Packet-to-Pixel Evidence Dossier" aria-label="Slide 89: HW1: the Packet-to-Pixel Evidence Dossier">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;Homework brief</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>89</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>HW1: the Packet-to-Pixel Evidence Dossier</h1>
+<ul>
+<li><strong>Purpose:</strong> prove you can watch one page load happen and read the evidence, not guess at it</li>
+<li><strong>Deliverables:</strong> network config, an annotated packet capture, a HAR export, and a <code>curl -v</code> trace</li>
+<li><strong>Plus:</strong> a socket/port map, a hand-drawn sequence diagram, two diagnosed failures, and proof of domain purchase</li>
+<li><strong>Task 9, the non-generatable one:</strong> reject one AI claim about your own evidence, and show what disproves it</li>
+<li><strong>Buy your domain this week.</strong> Registrar verification and propagation are a third party&#39;s clock, not yours</li>
+<li><strong>100 points · individual · full handout and rubric:</strong> <a href="../homework.md"><code>homework.md</code></a> — <strong>due at the start of Week 2 class</strong></li>
+</ul>
+
+<aside class="callout callout--tip" role="note"><p class="callout-head"><span class="ico" aria-hidden="true">✦</span><span>Tip</span></p><p>The domain hardship path is private, needs no explanation, and carries no grade difference. Ask, and it is done.</p>
+</aside></div></div>
+<div class="sources"><span class="sr-only">Sources: </span><ul><li>Course — <a href="../homework.md">HW1 handout</a> · <a href="../../../docs/evidence-standard.md">evidence standard</a></li></ul></div>
+
+</section>
+<section class="slide slide--bullets" data-layout="bullets" data-phase="closing" data-source-block="C" data-source-slide="30" data-title="Before you go" aria-label="Slide 90: Before you go">
+<div class="f-rail" aria-hidden="true"></div><div class="f-label"><b>W01·C</b> &nbsp;Closing logistics</div><div class="f-foot"><span class="f-course">CSC 436 — Web Application Systems</span><span class="f-num"><b>90</b> / 90</span></div>
+<div class="slide-body"><div class="fit"><h1>Before you go</h1>
+<ul>
+<li><strong>Exit ticket:</strong> one sentence — what surprised you about today&#39;s journey, or where it still feels fuzzy</li>
+<li><strong>Bring to Week 2:</strong> your purchased domain and registrar login</li>
+<li><strong>Before Week 2 class:</strong> complete the <a href="../../week02/prep.md">Week 2 prep</a> — five items, about 44 minutes, plus its readiness check</li>
+<li><strong>Any logistics question we didn&#39;t reach:</strong> the discussion board, not a hallway guess</li>
+<li><strong>Next week:</strong> the name you just bought becomes an address — resolution, in depth</li>
+</ul>
+</div></div>
+
+
+</section>
+</main>
+
+<div id="deck" data-deck-id="week01-session" data-kind="session" data-minutes="180" hidden></div>
+<div class="f-progress" aria-hidden="true"><i id="progress"></i></div>
+
+<div class="overlay" id="presenter" aria-hidden="true" aria-label="Presenter view">
+  <div class="pv-grid">
+    <div class="pv-bar">
+      <span class="pv-clock" id="pv-clock">00:00</span>
+      <button class="pv-btn" id="pv-toggle" type="button">Start timer</button>
+      <button class="pv-btn" id="pv-reset" type="button">Reset</button>
+      <span class="pv-pos" id="pv-pos"></span>
+      <span class="pv-pos" id="pv-pace"></span>
+      <span class="pv-hint">Budget 180 min · P to close · Esc to exit</span>
+      <button class="pv-btn" id="pv-close" type="button">Close</button>
+    </div>
+    <div class="pv-left">
+      <span class="pv-cap">Now</span>
+      <div class="pv-thumb" id="pv-now"></div>
+      <span class="pv-cap">Next</span>
+      <div class="pv-thumb" id="pv-next"></div>
+    </div>
+    <div class="pv-right">
+      <span class="pv-cap">Speaker notes</span>
+      <div class="pv-notes" id="pv-notes"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overview" aria-hidden="true" aria-label="Slide overview">
+  <h2>Overview — Course Intro and the Network Underneath</h2>
+  <div class="ov-grid" id="ov-grid"></div>
+</div>
+
+<div class="overlay" id="help" aria-hidden="true" aria-label="Keyboard help">
+  <h2>Keyboard</h2>
+  <table><tr><td><kbd>→ / Space / N</kbd></td><td>Next slide</td></tr><tr><td><kbd>← / Page Up</kbd></td><td>Previous slide</td></tr><tr><td><kbd>Home / End</kbd></td><td>First / last slide</td></tr><tr><td><kbd>P</kbd></td><td>Presenter view — notes, timer, next slide</td></tr><tr><td><kbd>T / R</kbd></td><td>Start-pause timer / reset timer (in presenter view)</td></tr><tr><td><kbd>O</kbd></td><td>Slide overview grid</td></tr><tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr><tr><td><kbd>B or .</kbd></td><td>Blackout the screen</td></tr><tr><td><kbd>Ctrl+P</kbd></td><td>Print — one slide per page, light handout palette</td></tr><tr><td><kbd>? or H</kbd></td><td>This help</td></tr><tr><td><kbd>Esc</kbd></td><td>Close overlays</td></tr></table>
+</div>
+
+<script>
+/* ============================================================================
+   CSC 436 — deck runtime
+   ----------------------------------------------------------------------------
+   Shared theme asset. Inlined into every generated HTML deck at build time.
+   No external dependencies, no network access: the decks must present from a
+   USB stick in a lecture hall with no wifi.
+
+   Storage keys are namespaced per deck (`csc436:<deckId>:*`) because every
+   deck opened from file:// shares one opaque origin — an unnamespaced key
+   would let Week 2's timer clobber Week 1's.
+   ========================================================================== */
+
+(function () {
+  "use strict";
+
+  var deck = document.getElementById("deck");
+  if (!deck) return;
+
+  var DECK_ID = deck.getAttribute("data-deck-id") || "deck";
+  var NS = "csc436:" + DECK_ID + ":";
+  var BUDGET_MIN = Number(deck.getAttribute("data-minutes")) || 0;
+  var IS_SESSION = deck.getAttribute("data-kind") === "session";
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll("#stage .slide"));
+  var total = slides.length;
+  var current = 0;
+
+  /* ------------------------------------------------------------- storage -- */
+
+  function store(key, value) {
+    try { window.localStorage.setItem(NS + key, String(value)); } catch (e) { /* file:// may deny */ }
+  }
+  function recall(key) {
+    try { return window.localStorage.getItem(NS + key); } catch (e) { return null; }
+  }
+
+  /* --------------------------------------------------------------- scale -- */
+
+  function fit() {
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    document.documentElement.style.setProperty("--k", String(k));
+    scaleThumbs();
+  }
+
+  function scaleThumbs() {
+    var thumbs = document.querySelectorAll(".pv-thumb, .ov-cell");
+    for (var i = 0; i < thumbs.length; i++) {
+      var inner = thumbs[i].querySelector(".pv-thumb-inner");
+      if (!inner) continue;
+      var w = thumbs[i].clientWidth;
+      var h = thumbs[i].clientHeight;
+      var k = Math.min(w / 1280, h / 720) || w / 1280;
+      var dx = (w - 1280 * k) / 2;
+      var dy = (h - 720 * k) / 2;
+      inner.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + k + ")";
+    }
+  }
+
+  /* ---------------------------------------------------------- navigation -- */
+
+  function show(index, push) {
+    index = Math.max(0, Math.min(total - 1, index));
+    if (slides[current]) slides[current].classList.remove("is-active");
+    current = index;
+    slides[current].classList.add("is-active");
+
+    var bar = document.getElementById("progress");
+    if (bar) bar.style.width = (total <= 1 ? 100 : (current / (total - 1)) * 100) + "%";
+
+    if (push !== false) {
+      var hash = "#/" + (current + 1);
+      if (window.location.hash !== hash) {
+        try { history.replaceState(null, "", hash); }
+        catch (e) { window.location.hash = hash; }
+      }
+    }
+
+    store("slide", current + 1);
+    if (live) live.textContent = "Slide " + (current + 1) + " of " + total + ". " + (slides[current].getAttribute("data-title") || "");
+    renderPresenter();
+    syncOverview();
+  }
+
+  function next() { if (current < total - 1) show(current + 1); }
+  function prev() { if (current > 0) show(current - 1); }
+
+  function fromHash() {
+    var m = /^#\/(\d+)$/.exec(window.location.hash || "");
+    if (m) {
+      var n = parseInt(m[1], 10) - 1;
+      if (n >= 0 && n < total) return n;
+    }
+    return null;
+  }
+
+  /* ------------------------------------------------------------ overlays -- */
+
+  function overlay(id) { return document.getElementById(id); }
+
+  function isOpen(id) {
+    var el = overlay(id);
+    return !!(el && el.classList.contains("is-open"));
+  }
+
+  function toggle(id, on) {
+    var el = overlay(id);
+    if (!el) return;
+    var open = typeof on === "boolean" ? on : !el.classList.contains("is-open");
+    el.classList.toggle("is-open", open);
+    el.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open && id === "presenter") renderPresenter();
+    if (open && id === "overview") buildOverview();
+    scaleThumbs();
+  }
+
+  function closeAll() {
+    toggle("help", false);
+    toggle("presenter", false);
+    toggle("overview", false);
+  }
+
+  /* ----------------------------------------------------------- presenter -- */
+
+  var timerStart = null;
+  var timerElapsed = 0;
+  var timerRunning = false;
+
+  function fmt(ms) {
+    var s = Math.floor(ms / 1000);
+    var sign = s < 0 ? "-" : "";
+    s = Math.abs(s);
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return sign + (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  function timerMs() {
+    return timerElapsed + (timerRunning && timerStart ? Date.now() - timerStart : 0);
+  }
+
+  function tick() {
+    var clock = document.getElementById("pv-clock");
+    if (!clock) return;
+    var ms = timerMs();
+    clock.textContent = fmt(ms);
+    clock.classList.toggle("is-over", BUDGET_MIN > 0 && ms > BUDGET_MIN * 60000);
+    var pace = document.getElementById("pv-pace");
+    if (pace && IS_SESSION) {
+      pace.textContent = "Follow the timed session plan";
+    } else if (pace && BUDGET_MIN > 0) {
+      var expected = total > 1 ? (current / (total - 1)) * BUDGET_MIN * 60000 : 0;
+      var delta = ms - expected;
+      pace.textContent = Math.abs(delta) < 20000
+        ? "on pace"
+        : (delta > 0 ? fmt(delta) + " behind" : fmt(-delta) + " ahead");
+    }
+  }
+
+  function toggleTimer() {
+    if (timerRunning) { timerElapsed = timerMs(); timerRunning = false; timerStart = null; }
+    else { timerStart = Date.now(); timerRunning = true; }
+    var btn = document.getElementById("pv-toggle");
+    if (btn) btn.textContent = timerRunning ? "Pause timer" : "Start timer";
+    tick();
+  }
+
+  function resetTimer() {
+    timerElapsed = 0;
+    timerStart = timerRunning ? Date.now() : null;
+    tick();
+  }
+
+  function thumbInto(host, index) {
+    host.innerHTML = "";
+    var inner = document.createElement("div");
+    inner.className = "pv-thumb-inner";
+    if (slides[index]) {
+      var clone = slides[index].cloneNode(true);
+      clone.classList.add("is-active");
+      clone.removeAttribute("id");
+      inner.appendChild(clone);
+    }
+    host.appendChild(inner);
+    var w = host.clientWidth;
+    var h = host.clientHeight;
+    var k = Math.min(w / 1280, h / 720) || w / 1280;
+    inner.style.transform = "translate(" + ((w - 1280 * k) / 2) + "px," + ((h - 720 * k) / 2) + "px) scale(" + k + ")";
+  }
+
+  function renderPresenter() {
+    if (!isOpen("presenter")) return;
+
+    thumbInto(document.getElementById("pv-now"), current);
+    var nextHost = document.getElementById("pv-next");
+    if (current + 1 < total) thumbInto(nextHost, current + 1);
+    else nextHost.innerHTML = '<div class="pv-thumb-inner"></div>';
+
+    var notes = document.getElementById("pv-notes");
+    var src = slides[current].querySelector(".notes-src");
+    notes.innerHTML = src ? src.innerHTML : '<p class="empty">No speaker notes on this slide.</p>';
+
+    var pos = document.getElementById("pv-pos");
+    if (pos) pos.textContent = "Slide " + (current + 1) + " / " + total;
+    tick();
+  }
+
+  /* ------------------------------------------------------------ overview -- */
+
+  var overviewBuilt = false;
+
+  function buildOverview() {
+    if (overviewBuilt) { syncOverview(); return; }
+    var grid = document.getElementById("ov-grid");
+    if (!grid) return;
+    for (var i = 0; i < total; i++) {
+      (function (i) {
+        var cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "ov-cell";
+        cell.setAttribute("aria-label", "Go to slide " + (i + 1) + ": " + (slides[i].getAttribute("data-title") || ""));
+        var inner = document.createElement("div");
+        inner.className = "pv-thumb-inner";
+        var clone = slides[i].cloneNode(true);
+        clone.classList.add("is-active");
+        clone.removeAttribute("id");
+        inner.appendChild(clone);
+        cell.appendChild(inner);
+        var num = document.createElement("span");
+        num.className = "ov-num";
+        num.textContent = String(i + 1);
+        cell.appendChild(num);
+        cell.addEventListener("click", function () { show(i); toggle("overview", false); });
+        grid.appendChild(cell);
+      })(i);
+    }
+    overviewBuilt = true;
+    scaleThumbs();
+    syncOverview();
+  }
+
+  function syncOverview() {
+    var cells = document.querySelectorAll(".ov-cell");
+    for (var i = 0; i < cells.length; i++) cells[i].classList.toggle("is-current", i === current);
+  }
+
+  /* -------------------------------------------------------------- events -- */
+
+  var live = document.getElementById("live");
+
+  document.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+    switch (e.key) {
+      case "ArrowRight": case "PageDown": case " ": case "Spacebar": case "n":
+        e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp":
+        e.preventDefault(); prev(); break;
+      case "ArrowDown": e.preventDefault(); next(); break;
+      case "ArrowUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); show(0); break;
+      case "End": e.preventDefault(); show(total - 1); break;
+      case "Escape": closeAll(); document.body.classList.remove("is-blacked"); break;
+      default: break;
+    }
+
+    var k = e.key.toLowerCase();
+    if (k === "p") { e.preventDefault(); toggle("presenter"); }
+    else if (k === "o") { e.preventDefault(); toggle("overview"); }
+    else if (k === "b" || k === ".") { e.preventDefault(); document.body.classList.toggle("is-blacked"); }
+    else if (k === "t") { e.preventDefault(); toggleTimer(); }
+    else if (k === "r" && isOpen("presenter")) { e.preventDefault(); resetTimer(); }
+    else if (k === "f") {
+      e.preventDefault();
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    }
+    else if (e.key === "?" || (e.key === "/" && e.shiftKey) || k === "h") { e.preventDefault(); toggle("help"); }
+  });
+
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest(".overlay, a, button")) return;
+    if (isOpen("presenter") || isOpen("overview") || isOpen("help")) return;
+    next();
+  });
+
+  var touchX = null, touchY = null;
+  document.addEventListener("touchstart", function (e) {
+    if (e.changedTouches.length !== 1) return;
+    touchX = e.changedTouches[0].clientX;
+    touchY = e.changedTouches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener("touchend", function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    var dy = e.changedTouches[0].clientY - touchY;
+    touchX = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) { if (dx < 0) next(); else prev(); }
+  }, { passive: true });
+
+  window.addEventListener("resize", fit);
+  window.addEventListener("beforeprint", fitAll);
+  window.addEventListener("hashchange", function () {
+    var n = fromHash();
+    if (n !== null && n !== current) show(n, false);
+  });
+
+  var toggleBtn = document.getElementById("pv-toggle");
+  if (toggleBtn) toggleBtn.addEventListener("click", toggleTimer);
+  var resetBtn = document.getElementById("pv-reset");
+  if (resetBtn) resetBtn.addEventListener("click", resetTimer);
+  var closeBtn = document.getElementById("pv-close");
+  if (closeBtn) closeBtn.addEventListener("click", function () { toggle("presenter", false); });
+
+  /* ------------------------------------------------------- shrink to fit -- */
+
+  /**
+   * Last-resort containment. `--check` warns an author when a slide is over
+   * capacity, but a deck must never spill off the bottom in front of a room,
+   * so every slide is measured after layout and its content zoomed down until
+   * it fits. Zoom (not transform) is used because it reflows: text rewraps
+   * instead of being squashed.
+   *
+   * Overflow is measured from laid-out geometry rather than scrollHeight,
+   * because an inline <svg> with a viewBox reports its intrinsic height as
+   * scrollHeight even when it has been scaled down to fit its frame — which
+   * would otherwise make every diagram slide look permanently overfull.
+   */
+  var supportsZoom = (function () {
+    var probe = document.createElement("div");
+    probe.style.zoom = "0.5";
+    return probe.style.zoom !== "";
+  })();
+
+  function overflowOf(box, fit) {
+    var limit = box.getBoundingClientRect().bottom;
+    var lowest = 0;
+    var descendants = fit.querySelectorAll("*");
+    for (var i = 0; i < descendants.length; i++) {
+      var bottom = descendants[i].getBoundingClientRect().bottom;
+      if (bottom > lowest) lowest = bottom;
+    }
+    return lowest - limit;
+  }
+
+  function fitOne(slide) {
+    var box = slide.querySelector(".slide-body");
+    var fit = slide.querySelector(".fit");
+    if (!box || !fit || fit.children.length === 0) return;
+
+    if (supportsZoom) fit.style.zoom = "";
+    else fit.style.transform = "";
+    fit.removeAttribute("data-fitted");
+
+    if (overflowOf(box, fit) <= 1) return;
+
+    var z = 1;
+    for (var i = 0; i < 16; i++) {
+      z -= 0.035;
+      if (z < 0.62) break;
+      if (supportsZoom) {
+        fit.style.zoom = String(z);
+      } else {
+        fit.style.transform = "scale(" + z + ")";
+        fit.style.transformOrigin = "top left";
+        fit.style.width = (100 / z) + "%";
+      }
+      if (overflowOf(box, fit) <= 1) break;
+    }
+    fit.setAttribute("data-fitted", z.toFixed(2));
+  }
+
+  function fitAll() {
+    for (var i = 0; i < slides.length; i++) {
+      var wasActive = slides[i].classList.contains("is-active");
+      if (!wasActive) slides[i].style.display = "block";
+      fitOne(slides[i]);
+      if (!wasActive) slides[i].style.display = "";
+    }
+  }
+
+  /* ---------------------------------------------------------------- boot -- */
+
+  fit();
+  fitAll();
+  setInterval(function () { if (isOpen("presenter")) tick(); }, 500);
+
+  var start = fromHash();
+  if (start === null) {
+    var remembered = parseInt(recall("slide") || "1", 10);
+    start = remembered > 0 && remembered <= total ? remembered - 1 : 0;
+  }
+  show(start);
+})();
+
+</script>
+</body>
+</html>

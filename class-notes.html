@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 1: Course Intro and the Network Underneath — class notes - CSC 436</title>
+<link rel="stylesheet" href="../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../docs/getting-started.html">Start here</a>
+<a href="../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../docs/course-map.html">Course map</a>
+<a href="../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="class-notes.md" download>Download Markdown source</a></p>
+<h1 id="week-1-course-intro-and-the-network-underneath--class-notes">Week 1: Course Intro and the Network Underneath — class notes</h1>
+<p>These notes contain the student-visible teaching material and examples. Complete the exercises individually. Instructor delivery notes and answer keys are not included.</p>
+<h2 id="weekly-session--course-intro-and-the-network-underneath">Weekly session — Course Intro and the Network Underneath</h2>
+<p>Review, preparation, logistics, teaching, individual practice, and the end-of-class brief</p>
+<h2 id="short-review">Short review</h2>
+<h3 id="two-laptops-one-destination">Two laptops, one destination</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>An illustrative classroom scenario: one simple goal, many cooperating systems.</p>
+</blockquote>
+<h4 id="mayas-mac">Maya&#39;s Mac</h4>
+<ul>
+<li>Joins the classroom Wi-Fi</li>
+<li>Enters <code>https://www.depaul.edu</code></li>
+<li>Opens the home page and follows a link</li>
+</ul>
+<h4 id="luiss-windows-laptop">Luis&#39;s Windows laptop</h4>
+<ul>
+<li>Joins the same classroom Wi-Fi</li>
+<li>Enters the same web address</li>
+<li>Wants the same usable page</li>
+</ul>
+<h2 id="weekly-logistics">Weekly logistics</h2>
+<h3 id="where-the-course-rules-live">Where the course rules live</h3>
+<ul>
+<li><strong>The syllabus is the rulebook.</strong> Schedule, grading, deadlines, and policies live there, and we walk through it separately today</li>
+<li><strong>These slides never replace it.</strong> If a slide and the syllabus ever disagree, the syllabus wins</li>
+<li><strong>Two companion documents:</strong> the AI-use policy, and the evidence standard that defines what counts as proof in this course</li>
+<li><strong>Unresolved questions go to the discussion board,</strong> so an answer is written down once for everybody</li>
+</ul>
+<blockquote>
+<p><strong>Tip</strong></p>
+<p><strong>Logistics questions: now</strong>, before we start the journey. After this slide we are on the technical material.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="../../docs/new_syllabus.html">syllabus</a> · <a href="../../docs/ai-use-policy.html">AI use policy</a> · <a href="../../docs/evidence-standard.html">evidence standard</a></li>
+</ul>
+<h2 id="block-a--the-whole-journey">Block A — The whole journey</h2>
+<h3 id="the-map-we-will-keep-coming-back-to">The map we will keep coming back to</h3>
+<p><img src="../../assets/class-notes/week01-session-s4-1.svg" alt="Five stages: join a network, get settings, find the website, exchange a page, and use the page"></p>
+<p><em>A fresh visit, grouped into five stages. Later slides unpack the jobs inside each stage.</em></p>
+<h3 id="four-words-about-where-your-request-goes">Four words about where your request goes</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Word</th><th>What it means, in one sentence</th></tr></thead><tbody><tr><td>Network</td><td>A set of connected devices that can send messages to each other.</td></tr><tr><td>The Internet</td><td>An enormous collection of networks that agreed to pass each other&#39;s messages.</td></tr><tr><td>IP address</td><td>The numeric address a device uses on a network, so replies can find their way back.</td></tr><tr><td>Gateway (router)</td><td>The device on your network that forwards traffic to destinations outside it.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>These words name the route a request takes: your computer starts on one network, and its gateway sends it toward another.</p>
+</blockquote>
+<h3 id="four-words-about-what-your-request-asks-for">Four words about what your request asks for</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Word</th><th>What it means, in one sentence</th></tr></thead><tbody><tr><td>Domain name</td><td>The human-friendly name of a site, such as <code>www.depaul.edu</code>.</td></tr><tr><td>Client and server</td><td>The client asks for something (your browser); the server answers (the website&#39;s computer).</td></tr><tr><td>HTTP / HTTPS</td><td>The rules browsers and servers use to ask for and return pages. HTTPS is the private version.</td></tr><tr><td>Resource</td><td>Any single item a page is made of: the page text, an image, a font, a stylesheet.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>None of these words describe <em>how</em> anything works yet. They are labels for the parts, so the story below has names to use.</p>
+</blockquote>
+<h3 id="1-join-a-local-network">1. Join a local network</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>&quot;Connected to Wi-Fi&quot; means a local connection exists. It does not prove the website works.</p>
+</blockquote>
+<h4 id="on-the-computer">On the computer</h4>
+<ul>
+<li>Choose Wi-Fi, or connect a network cable</li>
+<li>The network adapter establishes a local connection</li>
+<li>Supply a password or sign-in if required</li>
+</ul>
+<h4 id="on-the-local-network">On the local network</h4>
+<ul>
+<li>An access point or switch connects the device</li>
+<li>Network policy decides what access is permitted</li>
+<li>Some networks require an additional sign-in page</li>
+</ul>
+<h3 id="2-the-computer-gets-its-bearings">2. The computer gets its bearings</h3>
+<p><strong>A local connection still needs usable network settings.</strong></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Information</th><th>The question it answers</th></tr></thead><tbody><tr><td>This device&#39;s address</td><td>Where should replies go?</td></tr><tr><td>Local destinations</td><td>Which neighbors can I reach directly?</td></tr><tr><td>Default gateway</td><td>Who helps me reach other networks?</td></tr><tr><td>Name-lookup service</td><td>Who helps find the website&#39;s address?</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>&quot;Settings&quot; here means four answers your computer needs before it can talk to anything: who it is, who is nearby, who forwards its traffic outward, and who translates names into addresses.</p>
+</blockquote>
+<h3 id="3-tell-the-browser-where-you-want-to-go">3. Tell the browser where you want to go</h3>
+<p><img src="../../assets/class-notes/week01-session-s9-1.svg" alt="Browser address bar showing https://www.depaul.edu, with labels for a private web visit, the site name, and the home page"></p>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>That whole line is a <strong>URL</strong> — a web address. It names the rules to use (<code>https</code>), the site to talk to (<code>www.depaul.edu</code>), and optionally which page (nothing here, so: the home page).</p>
+</blockquote>
+<p><em>The browser interprets the address before asking for the page.</em></p>
+<h3 id="4-find-an-address-for-the-name">4. Find an address for the name</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>The name-lookup service is called <strong>DNS</strong>, the Domain Name System: a directory that turns a name people can remember into an address machines can use. Looking up the address is not the same job as downloading the page.</p>
+</blockquote>
+<h4 id="the-computer-asks">The computer asks</h4>
+<ul>
+<li>The human-friendly name is <code>www.depaul.edu</code></li>
+<li>Communication needs a network destination</li>
+<li>The browser or operating system may already know a usable answer</li>
+</ul>
+<h4 id="a-lookup-service-helps">A lookup service helps</h4>
+<ul>
+<li>If needed, it finds an address for the name</li>
+<li>There may be more than one usable address</li>
+<li>Answers can change while the familiar name stays the same</li>
+</ul>
+<h3 id="5-get-from-the-laptop-to-the-way-out">5. Get from the laptop to the way out</h3>
+<p><img src="../../assets/class-notes/week01-session-s11-1.svg" alt="A laptop sends traffic through a local access point or switch to a gateway, which connects to the wider Internet"></p>
+<p><em>For a remote website, the computer hands outgoing traffic to a local gateway.</em></p>
+<h3 id="6-networks-carry-the-conversation">6. Networks carry the conversation</h3>
+<p><strong>One visit crosses several networks, not a direct wire.</strong></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Part of the path</th><th>Its job</th></tr></thead><tbody><tr><td>Local network</td><td>Carry traffic to the way out</td></tr><tr><td>Gateway</td><td>Cross the network boundary and route replies</td></tr><tr><td>Internet routers</td><td>Forward toward the destination</td></tr><tr><td>Website&#39;s network</td><td>Deliver traffic to the web service</td></tr></tbody></table></div>
+<p><strong>Sources</strong></p>
+<ul>
+<li>MDN — <a href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/How_does_the_Internet_work">How does the Internet work?</a></li>
+</ul>
+<h3 id="78-start-a-conversation-then-ask">7–8. Start a conversation, then ask</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Being able to talk to the site and asking for a particular page are different steps. <strong>HTTPS</strong> means the conversation is scrambled in transit, so people between you and the site can see that you are talking to it, but not what you sent.</p>
+</blockquote>
+<h4 id="get-ready-to-talk">Get ready to talk</h4>
+<ul>
+<li>The browser reaches a service for the website</li>
+<li>For this HTTPS visit, it prepares a private conversation with the intended site</li>
+<li>A previously established conversation may be reusable</li>
+</ul>
+<h4 id="ask-for-the-page">Ask for the page</h4>
+<ul>
+<li>The browser requests the site&#39;s home page</li>
+<li>It can include context such as a language preference or a previous visit</li>
+<li>The service decides how to answer</li>
+</ul>
+<h3 id="9-the-websites-front-door-decides">9. The website&#39;s front door decides</h3>
+<p><img src="../../assets/class-notes/week01-session-s14-1.svg" alt="A website front door receives a page request and may return a saved copy or ask the application to produce a response"></p>
+<p><em>An illustrative website architecture, not a verified diagram of DePaul&#39;s current deployment.</em></p>
+<h3 id="10-the-application-may-need-information">10. The application may need information</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>The browser normally talks to the web service, not directly to the service&#39;s private database.</p>
+</blockquote>
+<h4 id="a-ready-made-page">A ready-made page</h4>
+<ul>
+<li>Content may already exist as a file</li>
+<li>The service can return it without assembling new information</li>
+<li>Not every visit requires a database query</li>
+</ul>
+<h4 id="a-page-assembled-for-a-request">A page assembled for a request</h4>
+<ul>
+<li>The application may read stored content or another service</li>
+<li>It may check what the visitor is allowed to see</li>
+<li>It creates a response for the browser</li>
+</ul>
+<h3 id="11-a-response-makes-the-return-trip">11. A response makes the return trip</h3>
+<p><strong>A delivered response is not yet a usable page.</strong></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Participant</th><th>Next job</th></tr></thead><tbody><tr><td>Web service</td><td>Send content, a new location, or a problem</td></tr><tr><td>Return-path networks</td><td>Carry the response back</td></tr><tr><td>Local network and computer</td><td>Deliver to the right device and application</td></tr><tr><td>Browser</td><td>Decide what to do with the response</td></tr></tbody></table></div>
+<h3 id="12-request-the-other-pieces">12. Request the other pieces</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>The first response is not necessarily the whole page. One visit can involve many requests. A <strong>saved copy</strong> — a cache — is a local copy kept from an earlier visit so the same item does not have to be fetched twice.</p>
+</blockquote>
+<h4 id="the-page-can-ask-for-more">The page can ask for more</h4>
+<ul>
+<li>Images and fonts</li>
+<li>Appearance rules and application code</li>
+<li>Fresh information needed by the page</li>
+</ul>
+<h4 id="earlier-jobs-can-happen-again">Earlier jobs can happen again</h4>
+<ul>
+<li>Another resource may be on another service</li>
+<li>Some resources can be reused from saved copies</li>
+<li>Several requests can be in progress together</li>
+</ul>
+<h3 id="13-the-browser-makes-the-page">13. The browser makes the page</h3>
+<p><img src="../../assets/class-notes/week01-session-s18-1.svg" alt="Page structure, appearance, images, and behavior feed into the browser to produce the visible usable page"></p>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>These four jobs have names you will use for ten weeks: <strong>HTML</strong> is the structure, <strong>CSS</strong> is the appearance, images are the media, and <strong>JavaScript</strong> is the behavior. The browser combines them into the page you see.</p>
+</blockquote>
+<p><em>The browser turns received resources into a page. Work can overlap as resources arrive.</em></p>
+<h3 id="14-visible-is-not-always-ready-to-use">14. Visible is not always ready to use</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Our destination is a usable experience, not just a successful connection.</p>
+</blockquote>
+<h4 id="something-is-on-the-screen">Something is on the screen</h4>
+<ul>
+<li>Text and a logo may already be visible</li>
+<li>Some work may still be in progress</li>
+<li>Appearance alone does not prove every feature works</li>
+</ul>
+<h4 id="the-visitor-can-do-the-job">The visitor can do the job</h4>
+<ul>
+<li>Links and controls respond</li>
+<li>Needed information is available</li>
+<li>An action may start another request-and-response cycle</li>
+</ul>
+<h3 id="three-milestones-not-one-checkbox">Three milestones, not one checkbox</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>What the student observes</th><th>What it establishes</th><th>What it does not establish</th></tr></thead><tbody><tr><td>Wi-Fi says connected</td><td>A local connection</td><td>Access to every Internet destination</td></tr><tr><td>Another website opens</td><td>At least one usable path and service</td><td>DePaul&#39;s site is available</td></tr><tr><td>DePaul&#39;s home page appears</td><td>Enough work completed to display it</td><td>Every link and feature is usable</td></tr></tbody></table></div>
+<h3 id="mac-or-windows-the-same-jobs">Mac or Windows: the same jobs</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Later examples include Windows PowerShell and macOS Terminal (zsh or bash). Follow your OS, not both.</p>
+</blockquote>
+<h4 id="what-stays-the-same">What stays the same</h4>
+<ul>
+<li>Join and configure a network connection</li>
+<li>Find and communicate with the site</li>
+<li>Receive resources, display a page, and respond to the user</li>
+</ul>
+<h4 id="what-can-look-different">What can look different</h4>
+<ul>
+<li>Settings screens and permission prompts</li>
+<li>Terminal commands and diagnostic output</li>
+<li>Browser menus and developer tools</li>
+</ul>
+<h3 id="from-i-can-visit-a-website-to-i-can-explain-and-operate-what-makes-a-web-application-work">From &#39;I can visit a website&#39; to &#39;I can explain and operate what makes a web application work.&#39;</h3>
+<blockquote>
+<p>From &#39;I can visit a website&#39; to &#39;I can explain and operate what makes a web application work.&#39;</p>
+</blockquote>
+<p>— The course destination</p>
+<h3 id="tell-the-story-without-the-tools">Tell the story without the tools</h3>
+<ol>
+<li>Draw the journey from joining Wi-Fi to using DePaul&#39;s home page. Include the computer, local network, Internet, and website.</li>
+<li>Mark one job before the page request and one job after the first response arrives.</li>
+<li>Why can &quot;Wi-Fi connected&quot; be true while the page is not usable?</li>
+</ol>
+<h2 id="block-b--on-the-network">Block B — On the network</h2>
+<h3 id="getting-on-the-network">Getting on the network</h3>
+<p>How a machine acquires an identity, finds its neighbours, and reaches everything else — and why none of it is visible from your source code</p>
+<p>Block A mapped the whole visit. Now we zoom into its first stages: joining and using the local network. Before your application communicates, the computer needs an identity, a local map, a way out, and help finding names.</p>
+<h3 id="fictional-campuspulse-case-reachable-from-here-invisible-from-there">Fictional CampusPulse case: reachable from here, invisible from there</h3>
+<h4 id="mayas-laptop">Maya&#39;s laptop</h4>
+<ul>
+<li>DHCP assigns <code>10.24.18.73/20</code></li>
+<li>The gateway is <code>10.24.16.1</code>; DNS is <code>10.20.0.53</code></li>
+<li>CampusPulse answers at <code>localhost:8080</code></li>
+</ul>
+<h4 id="luiss-laptop">Luis&#39;s laptop</h4>
+<ul>
+<li><code>curl</code> to <code>10.24.18.73:8080</code> gets <strong>connection refused</strong></li>
+<li>The listener table reveals <code>127.0.0.1:8080</code>, not the Wi-Fi address</li>
+<li>One bind setting, not the React code, decides who can connect</li>
+</ul>
+<h3 id="four-questions-answered-before-your-code-exists">Four questions, answered before your code exists</h3>
+<ul>
+<li><strong>Who am I?</strong> — an address this machine is allowed to use</li>
+<li><strong>Who is nearby?</strong> — which addresses it can reach without help</li>
+<li><strong>How do I get out?</strong> — where to send everything else</li>
+<li><strong>Who answers names?</strong> — which server turns text into an address</li>
+</ul>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Your application answers none of these. It inherits all four answers, from a
+server it never authenticated to, over a protocol it never chose.</p>
+</blockquote>
+<h3 id="four-words-about-joining-a-local-network">Four words about joining a local network</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>DHCP</td><td>The protocol a network uses to hand a newly joined device its address and settings.</td></tr><tr><td>Lease</td><td>The time-limited grant of that address. It expires, is renewed, and can change.</td></tr><tr><td>MAC address</td><td>A hardware address burned into a network adapter. Used only within one local network.</td></tr><tr><td>ARP</td><td>The &quot;who has this address?&quot; question a device shouts locally to find a neighbour&#39;s MAC address.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>DHCP gives a new device its starting information. ARP then helps it find another device on the same local network.</p>
+</blockquote>
+<h3 id="four-words-about-choosing-the-next-hop">Four words about choosing the next hop</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Subnet mask</td><td>The rule that says which addresses count as local neighbours and which do not.</td></tr><tr><td>CIDR (<code>/20</code>)</td><td>A shorthand for that same rule: how many leading bits of the address identify the network.</td></tr><tr><td>On-link</td><td>A destination you can reach directly, without asking the gateway to forward it.</td></tr><tr><td>Gateway</td><td>The device you hand traffic to when the destination is not on-link.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Every mechanism in the next fifteen minutes is one of these eight words in action. You are not expected to know them yet.</p>
+</blockquote>
+<h3 id="what-your-machine-will-tell-you">What your machine will tell you</h3>
+<pre><code class="language-console">   Physical Address. . . . . : 00-0D-3A-XX-XX-XX     # layer 2 identity
+   DHCP Enabled. . . . . . . : Yes                   # &lt;- negotiated
+   IPv4 Address. . . . . . . : 10.0.20.252           # 1. who am I
+   Subnet Mask . . . . . . . : 255.255.128.0         # 2. who is nearby
+   Default Gateway . . . . . : 10.0.0.1              # 3. how do I get out
+   DHCP Server . . . . . . . : 168.63.129.16         # who told me all this
+   DNS Servers . . . . . . . : 10.0.254.4            # 4. who answers names
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Gateway, DHCP server, resolver: <strong>three different jobs</strong>. A home router may do
+all three, but they need not share an address.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/network-config.txt">full annotated capture</a></li>
+<li>Microsoft — <a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">what 168.63.129.16 is</a></li>
+</ul>
+<h3 id="windows-inspect-the-active-connection">Windows: inspect the active connection</h3>
+<pre><code class="language-powershell">ipconfig /all
+Get-NetIPConfiguration
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Find the active adapter&#39;s address, prefix or mask, gateway, and DNS servers. Do not copy the sample&#39;s addresses.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Microsoft — <a href="https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration">Get-NetIPConfiguration</a></li>
+</ul>
+<h3 id="macos-find-the-interface-and-address">macOS: find the interface and address</h3>
+<pre><code class="language-bash">networksetup -listallhardwareports
+printf &#39;Device for active Wi-Fi/Ethernet (from list): &#39;
+read -r iface
+ipconfig getifaddr &quot;$iface&quot;
+ipconfig getpacket &quot;$iface&quot;
+ifconfig &quot;$iface&quot;
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Do not assume Wi-Fi is en0. Match the hardware port to its Device entry.</p>
+</blockquote>
+<h3 id="macos-lease-fields-the-same-questions">macOS lease fields: the same questions</h3>
+<p><strong>These fields describe the last IPv4 DHCP response, not every current policy.</strong></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Field in getpacket</th><th>Same question as the Windows capture</th></tr></thead><tbody><tr><td><code>yiaddr</code></td><td>Which IPv4 address was supplied?</td></tr><tr><td><code>subnet_mask</code></td><td>Which destinations are local?</td></tr><tr><td><code>router</code></td><td>Which gateway was supplied?</td></tr><tr><td><code>domain_name_server</code></td><td>Which name servers were supplied?</td></tr></tbody></table></div>
+<h3 id="macos-find-the-gateway-and-resolvers">macOS: find the gateway and resolvers</h3>
+<pre><code class="language-bash">route -n get default
+scutil --dns
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Read gateway and interface in the route; read nameserver and scope in the resolver configuration.</p>
+</blockquote>
+<h3 id="how-the-address-arrives-discover-offer-request-ack">How the address arrives: DISCOVER, OFFER, REQUEST, ACK</h3>
+<p><img src="../../assets/class-notes/week01-session-s34-1.svg" alt="A four-message DHCP exchange between client and server: DISCOVER broadcast from 0.0.0.0, OFFER from the server, REQUEST broadcast identifying the chosen server, and ACK confirming the lease"></p>
+<p><em>DHCP DORA — four messages, two of them broadcast, before the machine has an address to be addressed by</em></p>
+<p><strong>Sources</strong></p>
+<ul>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc2131.html">RFC 2131 §3.1, DHCP client-server interaction</a></li>
+</ul>
+<h3 id="the-lease-is-not-just-an-address">The lease is not just an address</h3>
+<ul>
+<li><strong>Address + mask</strong> — identity, and the definition of &quot;nearby&quot;</li>
+<li><strong>Default gateway</strong> — the way out</li>
+<li><strong>DNS servers</strong> — who resolves names, which is a <em>trust</em> decision made for you</li>
+<li><strong>Lease duration</strong> — this is a rental, and it expires</li>
+<li><strong>NTP, domain, search suffix, routes</strong> — options nobody reads until one breaks</li>
+</ul>
+<blockquote>
+<p><strong>Caution</strong></p>
+<p>A lease that never expires is not normal. On the capture above it ran to the year
+2162 — a platform artifact of a cloud VM. A home router hands out 12 or 24 hours.</p>
+</blockquote>
+<h3 id="arp-the-frame-needs-a-different-address">ARP: the frame needs a different address</h3>
+<h4 id="the-problem">The problem</h4>
+<p>The packet is addressed to <code>10.0.19.7</code>. The <strong>frame</strong> needs a MAC.</p>
+<p>So the host broadcasts <em>&quot;who has 10.0.19.7?&quot;</em> and caches the reply.</p>
+<h4 id="the-reality-on-a-cloud-network">The reality on a cloud network</h4>
+<p>Real <code>arp -a</code>: <code>10.0.0.1</code>, <code>10.0.0.63</code>, <code>10.0.1.52</code>, <code>10.0.7.77</code> — <strong>all four
+map to the same MAC.</strong> No shared wire; the fabric answers for everything.</p>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>IPv6 replaces ARP with <strong>NDP</strong>. Same job.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc826.html">RFC 826, Address Resolution Protocol</a> · <a href="https://www.rfc-editor.org/rfc/rfc4861.html">RFC 4861, Neighbor Discovery</a></li>
+</ul>
+<h3 id="which-addresses-can-exist-in-public">Which addresses can exist in public</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>CIDR</th><th>Where it works</th><th>You will meet it</th></tr></thead><tbody><tr><td><code>10.0.0.0/8</code></td><td>private only</td><td>cloud VNets, campus</td></tr><tr><td><code>172.16.0.0/12</code></td><td>private only</td><td>Docker, WSL</td></tr><tr><td><code>192.168.0.0/16</code></td><td>private only</td><td>home routers</td></tr><tr><td><code>127.0.0.0/8</code></td><td><strong>this machine only</strong></td><td>the whole problem</td></tr><tr><td><code>169.254.0.0/16</code></td><td>link-local</td><td>DHCP failed; cloud metadata</td></tr><tr><td><code>fe80::/10</code></td><td>link-local IPv6</td><td>every IPv6 interface</td></tr></tbody></table></div>
+<p><strong>Sources</strong></p>
+<ul>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc1918.html">RFC 1918, private address allocation</a> · <a href="https://www.rfc-editor.org/rfc/rfc3927.html">RFC 3927, IPv4 link-local</a></li>
+</ul>
+<h3 id="cidr-how-many-bits-are-the-network">CIDR: how many bits are the network?</h3>
+<pre><code class="language-text">255.255.128.0 = 11111111 11111111 1000 0000 00000000
+                |--- 17 network ---|---- 15 host ----|
+
+  2^15 = 32,768 addresses    10.0.0.0 -&gt; 10.0.127.255
+
+  10.0.19.7   in the /17     -&gt; on-link, ARP for it
+  10.0.200.4  NOT in the /17 -&gt; hand it to the gateway
+  8.8.8.8     nowhere near   -&gt; hand it to the gateway
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>The mask is the <strong>if-statement</strong> your machine runs on every outbound packet:
+<em>on-link, or hand it to the gateway?</em></p>
+</blockquote>
+<h3 id="the-route-table-is-that-if-statement">The route table is that if-statement</h3>
+<pre><code class="language-console">Destination          Gateway        Meaning
+0.0.0.0/0            10.0.0.1       default route
+10.0.0.0/17          On-link        local campus subnet
+127.0.0.0/8          On-link        loopback
+169.254.169.254/32   10.0.0.1       one pinned host
+
+to 10.0.19.7  -&gt; /17 -&gt; ARP for it directly
+to 8.8.8.8    -&gt; /0  -&gt; frame to gateway; IP stays 8.8.8.8
+to 127.0.0.1  -&gt; /8  -&gt; never leaves the kernel
+</code></pre>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/network-config.txt">annotated route table</a></li>
+</ul>
+<h3 id="windows-routes-and-nearby-addresses">Windows: routes and nearby addresses</h3>
+<pre><code class="language-powershell">route print -4
+arp -a
+Get-NetNeighbor -AddressFamily IPv6
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Routes choose the next hop. Neighbor entries map nearby network addresses to link addresses.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Microsoft — <a href="https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor">Get-NetNeighbor</a></li>
+</ul>
+<h3 id="macos-routes-and-nearby-addresses">macOS: routes and nearby addresses</h3>
+<pre><code class="language-bash">netstat -rn -f inet
+route -n get default
+arp -a
+ndp -an
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Compare Destination, Gateway, and Netif; use ARP for IPv4 neighbors and NDP for IPv6.</p>
+</blockquote>
+<h3 id="four-words-about-reaching-the-internet">Four words about reaching the Internet</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Private address</td><td>An address usable only inside one network. Many networks reuse the same private ranges.</td></tr><tr><td>Public address</td><td>A globally unique address that the rest of the Internet can route to.</td></tr><tr><td>NAT</td><td>Rewriting private addresses into one shared public address on the way out, and back on the way in.</td></tr><tr><td>Port</td><td>A number that says which program on a machine a message is for.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>A home or campus network can use private addresses inside, then use NAT to share one public address when it talks to the Internet.</p>
+</blockquote>
+<h3 id="four-words-about-a-programs-connection">Four words about a program&#39;s connection</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Socket</td><td>One end of a conversation: an address plus a port.</td></tr><tr><td>Listening socket</td><td>A program waiting for connections on a port.</td></tr><tr><td>Connected socket</td><td>An established conversation between two specific address-and-port pairs.</td></tr><tr><td>Bind address</td><td>The address a program agrees to accept connections on. <code>127.0.0.1</code> means &quot;this machine only&quot;.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p><code>127.0.0.1</code> (also called <code>localhost</code>, or loopback) never leaves your machine. <code>0.0.0.0</code> means &quot;accept on every address I have&quot;.</p>
+</blockquote>
+<h3 id="nat-the-address-you-have-is-not-the-address-you-are">NAT: the address you have is not the address you are</h3>
+<p><img src="../../assets/class-notes/week01-session-s44-1.svg" alt="Three private machines behind a NAT router that rewrites their source address and port to a single public address before packets reach a server on the internet"></p>
+<p><em>One public address, many private machines, and a translation table only you can open</em></p>
+<h3 id="the-same-request-from-both-ends">The same request, from both ends</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th></th><th>this host believes</th><th>the server received</th></tr></thead><tbody><tr><td>address</td><td><code>10.0.20.252</code></td><td><code>203.0.113.181</code></td></tr><tr><td>port</td><td><code>49302</code></td><td><code>55346</code></td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Failure to avoid</strong></p>
+<p>Address <strong>and</strong> port were rewritten in flight — and a second run seconds later left
+from <code>203.0.113.183</code>. The egress is a <strong>pool</strong>, not a box.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/path-and-nat.txt">the full NAT capture</a></li>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc3022.html">RFC 3022, Traditional NAT and NAPT</a></li>
+</ul>
+<h3 id="ports-and-sockets-two-tuples-and-the-difference-matters">Ports and sockets: two tuples, and the difference matters</h3>
+<ul>
+<li>A <strong>listening</strong> socket is <em>(address, port)</em> — two values, e.g. <code>0.0.0.0:8471</code></li>
+<li>A <strong>connected</strong> socket is <em>(local addr, local port, remote addr, remote port)</em> — four</li>
+<li>The four-tuple is why one server port serves thousands of clients unambiguously</li>
+<li>The client never chose its port; the kernel took one from the <strong>ephemeral range</strong></li>
+<li><code>TIME_WAIT</code> is that four-tuple being held after close, not a leak</li>
+</ul>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>A socket is an <strong>address and a port</strong>. If you got the address wrong, the port was
+never the problem.</p>
+</blockquote>
+<h3 id="one-listener-many-conversations">One listener, many conversations</h3>
+<pre><code class="language-console">  Proto  Local Address          Foreign Address        State
+  TCP    0.0.0.0:8471           0.0.0.0:0              LISTENING   25224
+  TCP    10.0.20.252:62681      10.0.20.252:8471       TIME_WAIT   0
+  TCP    10.0.20.252:62684      10.0.20.252:8471       TIME_WAIT   0
+  TCP    127.0.0.1:62630        127.0.0.1:8471         TIME_WAIT   0
+
+  row 1   TWO values:  (0.0.0.0, 8471)         &lt;- the listener
+  rows 2+ FOUR values: (local, 62681, remote, 8471)
+          server side identical; the CLIENT ports differ
+</code></pre>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/sockets-and-ports.txt">full socket capture</a></li>
+</ul>
+<h3 id="one-machine-one-port-two-answers">One machine, one port, two answers</h3>
+<pre><code class="language-console"># bound to 127.0.0.1
+TCP  127.0.0.1:8471  LISTENING
+curl 127.0.0.1:8471    -&gt; campuspulse ok
+curl 10.0.20.252:8471  -&gt; Connection refused (same box)
+# rebound to 0.0.0.0 — no code changed
+TCP  0.0.0.0:8471    LISTENING
+curl 127.0.0.1:8471    -&gt; campuspulse ok
+curl 10.0.20.252:8471  -&gt; campuspulse ok
+</code></pre>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/sockets-and-ports.txt">the full transcript</a></li>
+</ul>
+<h3 id="break-it-live-in-ninety-seconds">Break it live, in ninety seconds</h3>
+<h4 id="steps">Steps</h4>
+<ol>
+<li>Open A and B at the repo root; choose your OS steps; Node 18+</li>
+<li>Run the loopback-only server and the two requests on the next slides</li>
+<li>Stop it, bind all interfaces, and repeat without changing the URL</li>
+</ol>
+<h4 id="expected-observations">Expected observations</h4>
+<ul>
+<li>Loopback: JSON; LAN request fails</li>
+<li>Wildcard: JSON on both if allowed</li>
+</ul>
+<h4 id="fallback">Fallback</h4>
+<p>Open the socket capture on the cleanup slide.</p>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/campuspulse-stub.mjs">the stub server</a></li>
+</ul>
+<h3 id="windows-a-bind-only-to-loopback">Windows A: bind only to loopback</h3>
+<pre><code class="language-powershell">node --version
+node .\weeks\week01\samples\campuspulse-stub.mjs 127.0.0.1 8471
+</code></pre>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Expect: campuspulse listening on 127.0.0.1:8471.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/campuspulse-stub.mjs">stub arguments and response fields</a></li>
+</ul>
+<h3 id="macos-a-bind-only-to-loopback">macOS A: bind only to loopback</h3>
+<pre><code class="language-bash">node --version
+node ./weeks/week01/samples/campuspulse-stub.mjs 127.0.0.1 8471
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Expect &quot;campuspulse listening on 127.0.0.1:8471&quot;. Keep this terminal running.</p>
+</blockquote>
+<h3 id="windows-b-ask-two-different-addresses">Windows B: ask two different addresses</h3>
+<pre><code class="language-powershell">ipconfig
+$lan = Read-Host &#39;Active LAN IPv4, not 127.0.0.1&#39;
+Get-NetTCPConnection -State Listen -LocalPort 8471 |
+  Select-Object LocalAddress, LocalPort, OwningProcess
+curl.exe --noproxy &#39;*&#39; -sS --max-time 3 http://127.0.0.1:8471/healthz
+curl.exe --noproxy &#39;*&#39; -sS --max-time 3 &quot;http://${lan}:8471/healthz&quot;
+$LASTEXITCODE
+</code></pre>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Microsoft — <a href="https://learn.microsoft.com/powershell/module/nettcpip/get-nettcpconnection"><code>Get-NetTCPConnection</code></a></li>
+<li>Course — <a href="samples/sockets-and-ports.txt">socket evidence</a></li>
+</ul>
+<h3 id="macos-b-ask-two-different-addresses">macOS B: ask two different addresses</h3>
+<pre><code class="language-bash">networksetup -listallhardwareports
+printf &#39;Active LAN Device from list: &#39;; read -r iface
+lan=$(ipconfig getifaddr &quot;$iface&quot;)
+printf &#39;LAN IPv4: %s\n&#39; &quot;$lan&quot;
+# If blank, stop here and use the offline comparison.
+lsof -nP -iTCP:8471 -sTCP:LISTEN
+curl --noproxy &#39;*&#39; -sS --max-time 3 http://127.0.0.1:8471/healthz
+curl --noproxy &#39;*&#39; -sS --max-time 3 &quot;http://${lan}:8471/healthz&quot;
+printf &#39;exit=%s\n&#39; &quot;$?&quot;
+</code></pre>
+<h3 id="windows-a-change-just-the-listener">Windows A: change just the listener</h3>
+<pre><code class="language-powershell">node .\weeks\week01\samples\campuspulse-stub.mjs 0.0.0.0 8471
+</code></pre>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Now repeat the socket query and both curl requests from the previous slide, unchanged.</p>
+</blockquote>
+<blockquote>
+<p><strong>Caution</strong></p>
+<p>Use a trusted lab network. This exposes the synthetic stub on every IPv4 interface.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/campuspulse-stub.mjs">stub server</a></li>
+</ul>
+<h3 id="macos-a-change-just-the-listener">macOS A: change just the listener</h3>
+<pre><code class="language-bash">node ./weeks/week01/samples/campuspulse-stub.mjs 0.0.0.0 8471
+</code></pre>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>In B, repeat <code>lsof</code> and both <code>curl</code> requests. Expect a wildcard listener and, if policy permits, two JSON replies.</p>
+</blockquote>
+<blockquote>
+<p><strong>Caution</strong></p>
+<p>Use a trusted lab network. The synthetic stub now listens on every IPv4 interface.</p>
+</blockquote>
+<h3 id="what-changed-for-maya-and-luis">What changed for Maya and Luis?</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Observation</th><th>Mechanism</th><th>Safe conclusion</th></tr></thead><tbody><tr><td><code>boundTo</code> changes</td><td>The listener accepts more destination addresses</td><td>The bind configuration changed</td></tr><tr><td><code>servedOn</code> differs</td><td>Each request chose an interface address</td><td>Same process, two local paths</td></tr><tr><td><code>peer</code> port differs</td><td>Each client connection gets a source port</td><td>A request is not just a URL</td></tr><tr><td>Luis still cannot connect</td><td>Another boundary may block ingress</td><td>Check policy before changing code</td></tr></tbody></table></div>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/campuspulse-stub.mjs">response fields</a></li>
+</ul>
+<h3 id="windows-stop-the-stub-keep-the-evidence">Windows: stop the stub, keep the evidence</h3>
+<pre><code class="language-powershell">Get-Content .\weeks\week01\samples\sockets-and-ports.txt
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Press Ctrl+C in Terminal A to stop the all-interface listener.</p>
+</blockquote>
+<h3 id="macos-stop-the-stub-keep-the-evidence">macOS: stop the stub, keep the evidence</h3>
+<pre><code class="language-bash">cat ./weeks/week01/samples/sockets-and-ports.txt
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Ctrl+C in Terminal A stops the server. The saved Windows/Linux output is reference evidence, not today&#39;s Mac output.</p>
+</blockquote>
+<h3 id="why-it-works-on-localhost-means-nothing">Why &quot;it works on localhost&quot; means nothing</h3>
+<ul>
+<li><code>127.0.0.0/8</code> is matched in the route table and <strong>handed back to the kernel</strong></li>
+<li>It does not cross the physical LAN, its router, or its NAT</li>
+<li>A successful loopback request tests the app and a local path, not remote ingress</li>
+<li>A private address needs an explicit external path; NAPT may also rewrite its port</li>
+<li>Every one of those is a thing a reviewer, a friend testing your app, and your users are on the other side of</li>
+</ul>
+<blockquote>
+<p><strong>Failure to avoid</strong></p>
+<p>&quot;It works on my machine&quot; is not a lie. It is a true statement about a code path
+that shares almost nothing with the one your users take.</p>
+</blockquote>
+<h3 id="a-service-works-for-priya-but-not-for-dev-three-artifacts-diagnose-it">A service works for Priya, but not for Dev. Three artifacts. Diagnose it.</h3>
+<pre><code class="language-text">A)  Priya runs:  netstat -ano | findstr :8080
+    TCP    127.0.0.1:8080    0.0.0.0:0    LISTENING    9134
+
+B)  Dev runs:    curl --max-time 5 http://192.168.1.47:8080/healthz
+    curl: (7) Failed to connect ... Connection refused
+
+C)  Dev runs:    curl --max-time 5 http://192.168.1.47:3000/  -&gt;  200 OK
+</code></pre>
+<p><strong>1.</strong> What is the cause? <strong>2.</strong> Which artifact rules out a completely broken path?
+<strong>3.</strong> Priya says &quot;let&#39;s just use port 80.&quot; What happens?</p>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/injected-failures/failure-01-refused-from-lan/index.html">supplied failure prompt and artifacts</a></li>
+</ul>
+<h2 id="block-c--the-url-chain">Block C — The URL chain</h2>
+<h3 id="transport-and-the-url-chain">Transport and the URL chain</h3>
+<p>TCP, UDP, and QUIC — then every link between pressing Enter and seeing a pixel, which is the map the rest of this course is drawn on</p>
+<p>Block B got you an address. This block is about what happens after you have one — and then about the twelve steps between pressing Enter and seeing a pixel, which is the map for the next nine weeks.</p>
+<h3 id="fictional-campuspulse-case-the-spinner-does-not-tell-you-which-link-failed">Fictional CampusPulse case: the spinner does not tell you which link failed</h3>
+<h4 id="what-maya-sees">What Maya sees</h4>
+<ul>
+<li>She taps <strong>Report outage</strong> on the train</li>
+<li>The spinner runs for two seconds, then the page says &quot;Try again&quot;</li>
+<li>Her first diagnosis: &quot;the server is down&quot;</li>
+</ul>
+<h4 id="what-the-evidence-says">What the evidence says</h4>
+<ul>
+<li>DNS <strong>18 ms</strong>; TCP <strong>24 ms</strong>; TLS <strong>51 ms</strong></li>
+<li>HTTP returns <strong>200</strong> with JSON in <strong>140 ms</strong></li>
+<li>The browser console shows a JavaScript exception after the bytes arrive</li>
+</ul>
+<h3 id="four-words-about-starting-a-connection">Four words about starting a connection</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Protocol</td><td>An agreed set of rules two machines follow so each one understands the other.</td></tr><tr><td>TCP</td><td>The protocol that gives you an ordered, reliable stream of bytes between two programs.</td></tr><tr><td>Handshake</td><td>The short exchange that sets up a connection before any useful data is sent.</td></tr><tr><td>Round trip (RTT)</td><td>The time for a message to reach the other side and its reply to come back.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Before a browser can ask for a page, its connection follows a protocol and usually completes a handshake. RTT measures the wait for one exchange.</p>
+</blockquote>
+<h3 id="four-words-about-keeping-a-connection-safe">Four words about keeping a connection safe</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Term</th><th>Plain meaning</th></tr></thead><tbody><tr><td>Sequence number</td><td>A counter on each byte, so the receiver can reorder and detect what is missing.</td></tr><tr><td>Retransmission</td><td>Sending data again because it was not acknowledged in time.</td></tr><tr><td>TLS</td><td>The layer that encrypts an HTTPS conversation and proves you reached the real site.</td></tr><tr><td>Reset (RST)</td><td>An abrupt &quot;stop, this connection is over&quot; from the other end.</td></tr></tbody></table></div>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>TCP uses sequence numbers and retransmissions to keep data reliable. TLS makes that data private. A reset ends the conversation abruptly.</p>
+</blockquote>
+<h3 id="tcp-nobody-speaks-until-both-sides-have-agreed-to">TCP: nobody speaks until both sides have agreed to</h3>
+<p><img src="../../assets/class-notes/week01-session-s65-1.svg" alt="A TCP three-way handshake: client sends SYN with its initial sequence number, server replies SYN-ACK with its own, client sends ACK, and only then does the first request travel"></p>
+<p><em>Three packets and one round trip before either side may send a single useful byte</em></p>
+<p><strong>Sources</strong></p>
+<ul>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc9293.html">RFC 9293, Transmission Control Protocol</a></li>
+</ul>
+<h3 id="what-tcp-gives-you-and-what-it-charges">What TCP gives you, and what it charges</h3>
+<ul>
+<li><strong>Ordering</strong> — segments carry sequence numbers, so the receiver reassembles the stream</li>
+<li><strong>Retransmission</strong> — an unacknowledged segment is sent again, with exponential backoff</li>
+<li><strong>Flow control</strong> — the receiver advertises a window, so a fast sender cannot drown a slow one</li>
+<li><strong>Congestion control</strong> — the sender backs off when the <em>network</em> is the bottleneck</li>
+<li><strong>The bill:</strong> one round trip of setup, per-connection state on both ends, and head-of-line blocking</li>
+</ul>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>TCP turns an unreliable packet network into a reliable byte stream. Everything on
+this list is the price of that sentence.</p>
+</blockquote>
+<h3 id="sequencing-and-retransmission-how-silence-is-handled">Sequencing and retransmission: how silence is handled</h3>
+<p><img src="../../assets/class-notes/week01-session-s67-1.svg" alt="A TCP data transfer where segments with sequence numbers 1, 1461 and 2921 are sent, the middle one is lost, the receiver acknowledges only up to 1461 twice, and the sender retransmits with a doubling timeout"></p>
+<p><em>A lost segment is detected by a gap, not by an error — and the retry interval doubles</em></p>
+<h3 id="ending-a-connection-politely-or-not">Ending a connection: politely, or not</h3>
+<h4 id="fin--the-orderly-close">FIN — the orderly close</h4>
+<p>Four packets. Either side may stop sending and keep <strong>receiving</strong>, so the close
+is half-duplex first.</p>
+<p><code>TIME_WAIT</code> then holds the four-tuple for 2 × MSL.</p>
+<h4 id="rst--the-abort">RST — the abort</h4>
+<p>One packet. No agreement, unread data discarded.</p>
+<p><strong>A FIN is an agreement. A RST is a decision.</strong></p>
+<blockquote>
+<p><strong>Caution</strong></p>
+<p>Many <code>TIME_WAIT</code> sockets are normal; exhaustion needs evidence of failed new connections.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc9293.html">RFC 9293 §3.6, closing a connection</a></li>
+</ul>
+<h3 id="four-symptoms-read-the-failure-not-just-the-code">Four symptoms: read the failure, not just the code</h3>
+<pre><code class="language-console">127.0.0.1:9        -&gt; (7) refused: RST, host answered no
+192.0.2.1          -&gt; (28) timeout: silence, no answer
+127.0.0.1:8472     -&gt; (56) reset: request sent, then abort
+example.com:443    -&gt; (52) empty reply: orderly FIN
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>In plain words: <strong>refused</strong> means something answered and said no. <strong>Timeout</strong> means nothing answered at all. <strong>Reset</strong> means a conversation had started and was cut off. <strong>Empty reply</strong> means the connection closed politely without sending an answer.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/refused-vs-timeout.txt">the full transcripts and a decision table</a></li>
+</ul>
+<h3 id="macos-a-reproduce-a-local-reset">macOS A: reproduce a local reset</h3>
+<pre><code class="language-bash">node ./weeks/week01/samples/abort-server.mjs 8472
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>The loopback-only fixture accepts a connection, reads request bytes, then resets it. Keep A running.</p>
+</blockquote>
+<h3 id="reproduce-a-local-reset">Reproduce a local reset</h3>
+<pre><code class="language-powershell">node .\weeks\week01\samples\abort-server.mjs 8472
+</code></pre>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/abort-server.mjs">local reset fixture</a></li>
+</ul>
+<h3 id="macos-b-find-the-last-completed-phase">macOS B: find the last completed phase</h3>
+<pre><code class="language-bash">curl --noproxy &#39;*&#39; -v --max-time 5 http://127.0.0.1:8472/
+printf &#39;exit=%s\n&#39; &quot;$?&quot;
+# Ctrl+C in A; repeat these two commands to compare.
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>While A runs: connected, request sent, then a receive failure. After stopping A: connection fails earlier.</p>
+</blockquote>
+<h3 id="terminal-b-locate-the-last-successful-phase">Terminal B: locate the last successful phase</h3>
+<pre><code class="language-powershell">curl.exe --noproxy &#39;*&#39; -v --max-time 5 http://127.0.0.1:8472/
+$LASTEXITCODE
+# Now Ctrl+C in Terminal A; repeat both lines to compare.
+</code></pre>
+<p><strong>Sources</strong></p>
+<ul>
+<li>curl — <a href="https://curl.se/docs/manpage.html">exit codes and verbose diagnostics</a></li>
+<li>Course — <a href="samples/abort-server.mjs">reset fixture</a></li>
+</ul>
+<h3 id="same-spinner-a-different-next-action">Same spinner; a different next action</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Last evidence</th><th>What happened</th><th>Next diagnostic</th></tr></thead><tbody><tr><td>No <code>Connected</code> line</td><td>The connection did not establish</td><td>Inspect listener, destination, route</td></tr><tr><td><code>Connected</code>, then outgoing GET</td><td>The server accepted the connection</td><td>Inspect reset/crash/proxy evidence</td></tr><tr><td>An HTTP status and headers</td><td>Transport carried an HTTP response</td><td>Read status, body, and app logs</td></tr><tr><td>A timeout after connecting</td><td>A later phase took too long</td><td>Locate the stalled phase; do not blame DNS</td></tr></tbody></table></div>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="samples/refused-vs-timeout.txt">failure decision table</a></li>
+</ul>
+<h3 id="macos-the-same-offline-comparison">macOS: the same offline comparison</h3>
+<pre><code class="language-bash">cat ./weeks/week01/samples/refused-vs-timeout.txt
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Ctrl+C in A stops the fixture. The archived output explains the phases; Mac error wording may differ.</p>
+</blockquote>
+<h3 id="fallback-and-cleanup-no-firewall-experiment">Fallback and cleanup: no firewall experiment</h3>
+<pre><code class="language-powershell">Get-Content .\weeks\week01\samples\refused-vs-timeout.txt
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Stop Terminal A with Ctrl+C. Do not create a DROP rule to force a timeout.</p>
+</blockquote>
+<h3 id="udp-no-handshake-no-memory">UDP: no handshake, no memory</h3>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p><strong>UDP</strong> sends single messages, called datagrams, with no setup and no memory of what came before. It is not &quot;broken TCP&quot; — it is TCP with every guarantee removed, so the application can choose which ones it actually wants.</p>
+</blockquote>
+<h4 id="what-it-does-not-do">What it does not do</h4>
+<ul>
+<li>No connection, so no setup round trip</li>
+<li>No ordering, no retransmission</li>
+<li>No flow or congestion control</li>
+<li>An 8-byte header, versus TCP&#39;s 20</li>
+</ul>
+<h4 id="when-that-is-the-right-trade">When that is the right trade</h4>
+<ul>
+<li><strong>DNS</strong> — 29 bytes; a retry beats a handshake</li>
+<li><strong>DHCP</strong> — you have no address yet</li>
+<li><strong>Audio and video</strong> — late is worse than lost</li>
+<li><strong>QUIC</strong> — rebuilds reliability on top</li>
+</ul>
+<p><strong>Sources</strong></p>
+<ul>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc768.html">RFC 768, User Datagram Protocol</a></li>
+</ul>
+<h3 id="quic-the-handshake-rebuilt-on-udp">QUIC: the handshake, rebuilt on UDP</h3>
+<ul>
+<li>Runs over <strong>UDP</strong>, then rebuilds ordering, retransmission, and congestion control above it</li>
+<li>Merges the transport and TLS handshakes — <strong>1 RTT</strong> to a new server; <strong>0 RTT</strong> on a <em>resumed</em></li>
+<li>Streams are independent, so one lost packet no longer stalls the <em>others</em></li>
+<li>A connection ID lets a connection <strong>survive</strong> a network change, when both ends support it</li>
+<li><strong>HTTP/3 is HTTP over QUIC</strong>, and it is already a large share of real traffic</li>
+</ul>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p><strong>QUIC</strong> is a newer transport that does TCP&#39;s job and TLS&#39;s job at the same time, carried inside UDP. <strong>RTT</strong> is a round trip; &quot;1 RTT&quot; means one there-and-back before real data flows. <strong>HTTP/3</strong> is simply HTTP delivered over QUIC.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>IETF — <a href="https://www.rfc-editor.org/rfc/rfc9000.html">RFC 9000, QUIC transport</a> · <a href="https://www.rfc-editor.org/rfc/rfc9114.html">RFC 9114, HTTP/3</a></li>
+</ul>
+<h3 id="from-url-to-pixel">From URL to pixel</h3>
+<h3 id="the-chain">The chain</h3>
+<p><img src="../../assets/class-notes/week01-session-s80-1.svg" alt="The URL to pixel chain in twelve steps across two rows: parse the URL, check caches, resolve DNS, open TCP, TLS handshake, send the HTTP request, edge or CDN, origin server, parse HTML, execute JavaScript, render, and interact. Each step is labelled with the week of the course that covers it."></p>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Three of these names are new: an <strong>edge/CDN</strong> is a server placed near the user that can answer with a stored copy; the <strong>origin</strong> is the machine that actually owns the content; <strong>render</strong> is the browser turning HTML and CSS into pixels on screen.</p>
+</blockquote>
+<p><em>Twelve links. Every remaining week of this course attaches to one of them.</em></p>
+<h3 id="the-first-six-links-timed">The first six links, timed</h3>
+<pre><code class="language-console">$ curl -sS -o NUL -w &quot;dns=%{time_namelookup} tcp=%{time_connect}
+    tls=%{time_appconnect} ttfb=%{time_starttransfer}
+    total=%{time_total}\n&quot; https://www.depaul.edu/
+
+dns=0.010978  tcp=0.013690  tls=0.246471  ttfb=0.622437  total=0.647152
+
+  link 3   DNS              11 ms    cached; a cold lookup is 20-120 ms
+  link 4   TCP handshake   + 3 ms    one round trip, close by
+  link 5   TLS handshake + 233 ms    the most expensive thing here
+  links 6-8  request, edge, origin, first byte      + 376 ms
+  the remaining 238 KB of body                      +  25 ms
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Four numbers localise a slow page to a link — no profiler, no dashboard, and it
+runs anywhere <code>curl</code> runs.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li><a href="https://curl.se/docs/manpage.html">curl manual — <code>--write-out</code> variables</a></li>
+</ul>
+<h3 id="windows-measure-those-same-phases">Windows: measure those same phases</h3>
+<pre><code class="language-powershell">$fmt = &#39;dns=%{time_namelookup} tcp=%{time_connect} &#39;
+$fmt += &#39;tls=%{time_appconnect} ttfb=%{time_starttransfer} &#39;
+$fmt += &#39;total=%{time_total}\n&#39;
+curl.exe -sS -o NUL --max-time 15 -w $fmt https://www.depaul.edu/
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>These are cumulative seconds, not five independent durations. Your values need not match the archived capture.</p>
+</blockquote>
+<h3 id="macos-measure-those-same-phases">macOS: measure those same phases</h3>
+<pre><code class="language-bash">fmt=&#39;dns=%{time_namelookup} tcp=%{time_connect} &#39;
+fmt=&quot;${fmt}tls=%{time_appconnect} ttfb=%{time_starttransfer} &quot;
+fmt=&quot;${fmt}total=%{time_total}\n&quot;
+curl -sS -o /dev/null --max-time 15 -w &quot;$fmt&quot; https://www.depaul.edu/
+</code></pre>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Same fields and interpretation; /dev/null replaces Windows NUL. Keep the format variable quoted.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>curl — <a href="https://curl.se/docs/manpage.html">write-out variables</a></li>
+</ul>
+<h3 id="four-filters-four-links-four-artifacts">Four filters, four links, four artifacts</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Link</th><th>Wireshark display filter</th><th>What you should find</th></tr></thead><tbody><tr><td>3 · DNS</td><td><code>dns</code></td><td>one query, one response, 2 answers, a TTL</td></tr><tr><td>4 · TCP</td><td><code>tcp.flags.syn == 1</code></td><td>exactly two packets: SYN, then SYN+ACK</td></tr><tr><td>5 · TLS</td><td><code>tls.handshake.type == 1</code></td><td>your hostname, <strong>in cleartext</strong></td></tr><tr><td>6 · HTTP</td><td><code>http.request</code></td><td>the <code>Host:</code> header — and <strong>nothing</strong> over HTTPS</td></tr></tbody></table></div>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Wireshark — <a href="https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDisplayFilterSection.html">display filter reference</a></li>
+<li>Course — <a href="samples/capture-walkthrough.html">a fully worked annotated capture</a></li>
+</ul>
+<h3 id="one-link-failed-everything-looked-down">One link failed. Everything looked down.</h3>
+<h4 id="4-october-2021">4 October 2021</h4>
+<p>A routine backbone maintenance
+command was issued to <strong>assess</strong>
+capacity.</p>
+<p>The audit tool had a bug.</p>
+<p>Every Facebook data centre fell
+off the internet.</p>
+<h4 id="what-actually-broke-for-users">What actually broke for users</h4>
+<p>The DNS servers were healthy, but
+their health check could not reach
+the data centres.</p>
+<p>They withdrew their BGP routes.</p>
+<blockquote>
+<p><strong>Failure to avoid</strong></p>
+<p><strong>Link 3 failed; every other link became unreachable.</strong></p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Meta Engineering — <a href="https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/">More details about the October 4 outage</a> (primary postmortem)</li>
+</ul>
+<h3 id="links-9-to-12-the-bytes-arrived-and-nothing-is-on-screen-yet">Links 9 to 12: the bytes arrived, and nothing is on screen yet</h3>
+<ul>
+<li><strong>Parse</strong> — HTML becomes a DOM; a blocking <code>&lt;script&gt;</code> in <code>&lt;head&gt;</code> stops the parser dead</li>
+<li><strong>Execute</strong> — JavaScript runs, and with client-side rendering <em>nothing</em> is visible until it finishes</li>
+<li><strong>Render</strong> — style, layout, paint, composite; this is where a11y and Core Web Vitals live</li>
+<li><strong>Interact</strong> — the page looks ready but the handlers are not attached yet, so clicks are dropped</li>
+</ul>
+<blockquote>
+<p><strong>Caution</strong></p>
+<p>&quot;Fast&quot; is not one number. A page can reach first paint in 400 ms and be unusable
+for three seconds. Users report the second one.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>MDN — <a href="https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Navigation_and_resource_timings">Navigation and resource timings</a></li>
+</ul>
+<h3 id="four-users-four-reports-which-link-broke-and-what-evidence-settles-it">Four users, four reports. Which link broke, and what evidence settles it?</h3>
+<ol>
+<li>&quot;Server not found.&quot; Their colleague at the next desk loads it fine.</li>
+<li>Padlock warning on a phone; fine on both laptops in the room.</li>
+<li>Page loads instantly but shows yesterday&#39;s incident list.</li>
+<li>Page paints in 300 ms; buttons do nothing for four seconds.</li>
+</ol>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="../../docs/course-map.html">the URL chain and which week owns each link</a></li>
+</ul>
+<h2 id="individual-practice">Individual practice</h2>
+<h3 id="guided-lab-capture-your-own-traffic-then-break-your-own-port">Guided lab: capture your own traffic, then break your own port</h3>
+<ul>
+<li><strong>Now, 35 minutes:</strong> find your machine&#39;s network settings, then capture a real page load</li>
+<li><strong>In the capture:</strong> point at the DNS query, the TCP handshake, the TLS ClientHello, and the first HTTP request</li>
+<li><strong>Then break it on purpose:</strong> stop your own listening port and diagnose refused vs. timed out vs. reset from symptoms alone</li>
+<li><strong>Evidence, not a screenshot:</strong> every step has a saved fallback capture for a restricted machine or VPN</li>
+</ul>
+<blockquote>
+<p><strong>Key idea</strong></p>
+<p>Full instructions and fallbacks: <a href="lab.html"><code>lab.md</code></a>.</p>
+</blockquote>
+<h2 id="homework-brief">Homework brief</h2>
+<h3 id="hw1-the-packet-to-pixel-evidence-dossier">HW1: the Packet-to-Pixel Evidence Dossier</h3>
+<ul>
+<li><strong>Purpose:</strong> prove you can watch one page load happen and read the evidence, not guess at it</li>
+<li><strong>Deliverables:</strong> network config, an annotated packet capture, a HAR export, and a <code>curl -v</code> trace</li>
+<li><strong>Plus:</strong> a socket/port map, a hand-drawn sequence diagram, two diagnosed failures, and proof of domain purchase</li>
+<li><strong>Task 9, the non-generatable one:</strong> reject one AI claim about your own evidence, and show what disproves it</li>
+<li><strong>Buy your domain this week.</strong> Registrar verification and propagation are a third party&#39;s clock, not yours</li>
+<li><strong>100 points · individual · full handout and rubric:</strong> <a href="homework.html"><code>homework.md</code></a> — <strong>due at the start of Week 2 class</strong></li>
+</ul>
+<blockquote>
+<p><strong>Tip</strong></p>
+<p>The domain hardship path is private, needs no explanation, and carries no grade difference. Ask, and it is done.</p>
+</blockquote>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Course — <a href="homework.html">HW1 handout</a> · <a href="../../docs/evidence-standard.html">evidence standard</a></li>
+</ul>
+<h2 id="closing-logistics">Closing logistics</h2>
+<h3 id="before-you-go">Before you go</h3>
+<ul>
+<li><strong>Exit ticket:</strong> one sentence — what surprised you about today&#39;s journey, or where it still feels fuzzy</li>
+<li><strong>Bring to Week 2:</strong> your purchased domain and registrar login</li>
+<li><strong>Before Week 2 class:</strong> complete the <a href="../week02/prep.html">Week 2 prep</a> — five items, about 44 minutes, plus its readiness check</li>
+<li><strong>Any logistics question we didn&#39;t reach:</strong> the discussion board, not a hallway guess</li>
+<li><strong>Next week:</strong> the name you just bought becomes an address — resolution, in depth</li>
+</ul>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

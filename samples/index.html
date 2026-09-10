@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 1 — sample artifacts - CSC 436</title>
+<link rel="stylesheet" href="../../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../../docs/getting-started.html">Start here</a>
+<a href="../../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../../docs/course-map.html">Course map</a>
+<a href="../../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="README.md" download>Download Markdown source</a></p>
+<h1 id="week-1--sample-artifacts">Week 1 — sample artifacts</h1>
+<p><strong>CSC 436 — Web Application Systems: From URL to Operable Product</strong></p>
+<p>Every capture in this folder was produced by running the command against a real machine and
+a real network on <strong>2026-08-15</strong>, then sanitised. Nothing here was written by hand to look
+plausible. Where something is reconstructed rather than captured, it says so in the file.</p>
+<p>That is not a boast — it is the standard <a href="../homework.html">HW1</a> holds you to.</p>
+<hr>
+<h2 id="what-is-in-here">What is in here</h2>
+<p>Maintainer regression command (Node 24, from course content root):
+<code>node --test weeks/week01/samples/samples.test.mjs</code>.
+Restore the Week 3 <code>incident-feed</code> dependencies with <code>npm ci</code> first. These
+tests check the runnable Weeks 1–5 fixtures and <strong>expect</strong> the documented HTTP/
+cache faults; passing tests do not mean a deliberately faulty exercise was fixed.
+They are distinct from <code>incident-feed</code>&#39;s intentionally failing <code>check</code> script
+and its passing <code>check:fixed</code> reference validation.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>File</th><th>What it is</th><th>Used by</th></tr></thead><tbody><tr><td><a href="curl-verbose.txt"><code>curl-verbose.txt</code></a></td><td>Annotated <code>curl -v</code> transcript — resolution, TLS, wire protocol</td><td>Block A demo fallback</td></tr><tr><td><a href="network-config.txt"><code>network-config.txt</code></a></td><td>Real <code>ipconfig /all</code> + <code>route print</code> with a full annotation pass</td><td>Block B, lab step 1</td></tr><tr><td><a href="sockets-and-ports.txt"><code>sockets-and-ports.txt</code></a></td><td>Listening sockets, ephemeral ports, the bind-address failure and its fix</td><td>Block B, lab step 2</td></tr><tr><td><a href="path-and-nat.txt"><code>path-and-nat.txt</code></a></td><td><code>nslookup</code>, <code>ping</code>, <code>tracert</code>, and hard evidence of NAT rewriting a source address <strong>and</strong> a source port</td><td>Block B, lab step 3</td></tr><tr><td><a href="refused-vs-timeout.txt"><code>refused-vs-timeout.txt</code></a></td><td>The two failure shapes side by side, with wall-clock timings</td><td>Block C, lab step 6</td></tr><tr><td><a href="week01-fallback-capture.pcap"><code>week01-fallback-capture.pcap</code></a></td><td>A 32-packet capture: DNS, TCP handshake, TLS ClientHello, HTTP request/response</td><td>Lab step 5 <strong>fallback</strong></td></tr><tr><td><a href="make-fallback-capture.mjs"><code>make-fallback-capture.mjs</code></a></td><td>The generator for that pcap. Re-runnable; documents exactly what is real</td><td>Instructor</td></tr><tr><td><a href="capture-walkthrough.html"><code>capture-walkthrough.md</code></a></td><td><strong>A fully worked annotated capture.</strong> This is the depth HW1 expects</td><td>HW1 worked example</td></tr><tr><td><a href="injected-failures/index.html"><code>injected-failures/</code></a></td><td>The two failures HW1 asks you to diagnose</td><td>HW1 task 7</td></tr></tbody></table></div>
+<hr>
+<h2 id="the-fallback-capture-what-is-real-what-is-not">The fallback capture: what is real, what is not</h2>
+<p><code>week01-fallback-capture.pcap</code> exists for students who cannot run a live capture — no admin
+rights on a managed laptop, an MDM profile that blocks Npcap, a locked-down lab VM, or a
+full-tunnel VPN that hides the interesting traffic. <strong>You are never blocked on the lab.</strong></p>
+<p>Read this before you use it, because it models the disclosure discipline this course grades:</p>
+<p><strong>Real, byte for byte, from an actual exchange:</strong></p>
+<ul>
+<li>the DNS query and response (real question, real answer, real TTL)</li>
+<li>the TLS ClientHello, ServerHello, certificate chain, and the rest of the handshake</li>
+<li>the encrypted application-data records</li>
+<li>the cleartext HTTP/1.1 request and response</li>
+<li>the relative timing between all of the above</li>
+</ul>
+<p><strong>Synthesised, because a userspace program never sees these:</strong></p>
+<ul>
+<li>Ethernet headers — the MACs are locally administered (<code>02:00:00:00:00:0x</code>) and deliberately fake</li>
+<li>IPv4 headers — the addresses are real; IP IDs and checksums are computed by the generator</li>
+<li>the TCP three-way handshake, the bare ACKs, and the FIN teardown are reconstructed from
+the real byte counts, so the stream reassembles correctly, but there is no retransmission,
+reordering, or window behaviour in it</li>
+</ul>
+<p>So the <strong>payloads and protocol semantics are genuine and worth reading</strong>; the <strong>transport
+dynamics are a clean-room reconstruction</strong>. It is a teaching artifact, not evidence.</p>
+<blockquote>
+<p><strong>HW1 requires <em>your</em> capture — but the no-capture path is worth full marks.</strong> Submitting
+this file <em>as though it were your own capture</em> earns nothing for that artifact and is a
+fabrication issue. <strong>Declaring that you could not capture and using the documented
+alternative path in the homework earns full credit</strong>, and it is exactly what this file
+exists for. Say which of the two you did, in one sentence, in your submission.</p>
+</blockquote>
+<p>Regenerate it any time:</p>
+<pre><code class="language-bash">node weeks/week01/samples/make-fallback-capture.mjs
+</code></pre>
+<hr>
+<h2 id="redaction-key">Redaction key</h2>
+<p>Every capture here was sanitised with the same rules HW1 requires of you. <strong>Replace, do not
+crop</strong> — the shape of a redacted value is usually part of the evidence.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Original</th><th>Published as</th><th>Why</th></tr></thead><tbody><tr><td>Machine host name</td><td><code>CPC-REDACTED</code></td><td>Identifies a person</td></tr><tr><td>MAC addresses</td><td><code>00-0D-3A-XX-XX-XX</code></td><td>Vendor OUI kept on purpose — it is a hardware fact, not a personal one. Interface identifier removed.</td></tr><tr><td>DHCPv6 DUID</td><td>partially masked</td><td>It embeds the MAC</td></tr><tr><td>IPv6 link-local interface IDs</td><td><code>fe80::[iid-redacted]%26</code></td><td>Derived per-interface identifier</td></tr><tr><td>Public egress address <code>70.37.26.x</code></td><td><code>203.0.113.181</code> / <code>203.0.113.183</code></td><td>Real public address tied to a person. Replaced with <a href="https://www.rfc-editor.org/rfc/rfc5737.html">RFC 5737</a> TEST-NET-3, <strong>preserving the fact that two consecutive requests left from two different addresses</strong></td></tr><tr><td>Wi-Fi SSID</td><td>not captured</td><td>Never publish it</td></tr></tbody></table></div>
+<p><strong>Deliberately <em>not</em> redacted</strong>, because they carry the lesson and identify nobody:</p>
+<ul>
+<li>RFC 1918 private addresses (<code>10.0.20.252</code>, <code>10.0.0.1</code>, <code>172.24.192.1</code>) — the whole point</li>
+<li><code>168.63.129.16</code> — Azure&#39;s <a href="https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16">documented public virtual IP</a> for platform DHCP/DNS. A published constant.</li>
+<li>Ephemeral port numbers — they are gone the moment the socket closes</li>
+<li>The destination addresses of public web servers</li>
+</ul>
+<hr>
+<h2 id="the-machine-these-were-captured-on">The machine these were captured on</h2>
+<p>A <strong>cloud-hosted Windows desktop</strong>, not a laptop on home Wi-Fi. That turns out to be a
+feature, because it separates three roles a home router deliberately merges:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Role</th><th>On this machine</th><th>On a typical home network</th></tr></thead><tbody><tr><td>Default gateway</td><td><code>10.0.0.1</code></td><td><code>192.168.1.1</code></td></tr><tr><td>DHCP server</td><td><code>168.63.129.16</code></td><td><code>192.168.1.1</code></td></tr><tr><td>DNS resolver</td><td><code>10.0.254.4</code></td><td><code>192.168.1.1</code></td></tr></tbody></table></div>
+<p>Three jobs, three different servers. Your home router runs all three, which is why students
+routinely believe they are one thing. They are not.</p>
+<p><strong>ICMP is filtered on this network</strong>, so <code>ping</code> and <code>tracert</code> fail while HTTPS to the same
+host succeeds. That is also captured here, on purpose — see <code>path-and-nat.txt</code>. Your own
+output will differ. Read <em>yours</em>.</p>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

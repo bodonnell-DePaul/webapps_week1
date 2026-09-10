@@ -1,0 +1,24 @@
+$ node server.js
+[2026-08-15T21:02:44.117Z] campuspulse v0.3.1 starting
+[2026-08-15T21:02:44.121Z] config loaded from ./config/local.json
+[2026-08-15T21:02:44.121Z]   PORT=8471
+[2026-08-15T21:02:44.121Z]   HOST=localhost
+[2026-08-15T21:02:44.122Z]   NODE_ENV=development
+[2026-08-15T21:02:44.140Z] db: connected (sqlite ./data/campuspulse.db)
+[2026-08-15T21:02:44.152Z] seeded 12 services, 3 open incidents
+[2026-08-15T21:02:44.158Z] listening on localhost:8471
+[2026-08-15T21:02:44.158Z] health check: http://localhost:8471/healthz
+[2026-08-15T21:02:44.159Z] ready
+
+[2026-08-15T21:07:19.402Z] GET /healthz 200 1.2ms
+[2026-08-15T21:07:26.884Z] GET /healthz 200 0.8ms
+[2026-08-15T21:09:03.551Z] GET / 200 14.7ms
+[2026-08-15T21:11:41.007Z] GET /healthz 200 0.9ms
+
+--- restarted at 21:12:58 after Priya reported the problem ---
+
+[2026-08-15T21:12:58.883Z] campuspulse v0.3.1 starting
+[2026-08-15T21:12:58.901Z] listening on localhost:8471
+[2026-08-15T21:12:58.901Z] ready
+
+[2026-08-15T21:13:22.119Z] GET /healthz 200 1.1ms

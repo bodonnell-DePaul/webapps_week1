@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 1 — Pre-class prep - CSC 436</title>
+<link rel="stylesheet" href="../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../docs/getting-started.html">Start here</a>
+<a href="../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../docs/course-map.html">Course map</a>
+<a href="../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="prep.md" download>Download Markdown source</a></p>
+<h1 id="week-1--pre-class-prep">Week 1 — Pre-class prep</h1>
+<p><strong>CSC 436 — Web Application Systems: From URL to Operable Product</strong>
+<strong>Time budget: ~60 minutes</strong> · Due <strong>before</strong> the Week 1 session · Readiness check in D2L</p>
+<p>New to terminals or web pages? Begin with <a href="../../docs/getting-started.html">getting started</a>.
+The ungraded diagnostic and supported foundations practice are staged separately;
+they are not extra reading hidden in this prep estimate.</p>
+<blockquote>
+<p><strong>Class assumes this is done.</strong> The ten-minute opening includes a short baseline
+review, a focused prep recap, and course logistics. Bring unresolved questions;
+the overview comes first and the detailed networking work follows in Block B.</p>
+</blockquote>
+<hr>
+<h2 id="why-this-prep-specifically">Why this prep, specifically</h2>
+<p>Week 1 is the highest-attrition session in this course for students with no networking
+background — and that is almost always a <strong>confidence</strong> problem rather than an ability one.
+The seven resources below exist to make sure the words <em>subnet</em>, <em>gateway</em>, <em>NAT</em>, and
+<em>datagram</em> are already familiar when you hear them in a lecture hall, so that the session can
+spend its time on the parts that actually take practice.</p>
+<p>If you already know this material, the readiness check will take you four minutes. Take it
+anyway — question 5 is not a definition question.</p>
+<hr>
+<h2 id="core-assignment-49-min--seven-focused-resources">Core assignment (~49 min) — seven focused resources</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>#</th><th>Resource</th><th>Publisher</th><th>Type</th><th style="text-align:right">Time</th></tr></thead><tbody><tr><td>1</td><td><a href="https://www.youtube.com/watch?v=PG9oKZdFb7w">Network Stacks and the Internet</a></td><td>Computerphile (Richard Mortier)</td><td>Video</td><td style="text-align:right">11 min</td></tr><tr><td>2</td><td><a href="https://www.cloudflare.com/learning/ddos/glossary/open-systems-interconnection-model-osi/">What is the OSI Model?</a></td><td>Cloudflare Learning Center</td><td>Article</td><td style="text-align:right">7 min</td></tr><tr><td>3</td><td><a href="https://www.cloudflare.com/learning/network-layer/what-is-an-ip-address/">What is an IP Address?</a></td><td>Cloudflare Learning Center</td><td>Article</td><td style="text-align:right">5 min</td></tr><tr><td>4</td><td><a href="https://www.cloudflare.com/learning/network-layer/what-is-a-subnet/">What is a Subnet?</a></td><td>Cloudflare Learning Center</td><td>Article</td><td style="text-align:right">6 min</td></tr><tr><td>5</td><td><a href="reference.html#nat-and-return-traffic">NAT and return traffic</a></td><td>Course public networking walkthrough</td><td>Worked explanation</td><td style="text-align:right">5 min</td></tr><tr><td>6</td><td><a href="https://www.rfc-editor.org/rfc/rfc2131.html">RFC 2131 (DHCP)</a> — <strong>§1–2 only</strong></td><td>IETF / R. Droms</td><td>Spec, skim</td><td style="text-align:right">6 min</td></tr><tr><td>7</td><td><a href="https://www.youtube.com/watch?v=ihvbhwGblQg">Transport Layer and UDP Explained</a></td><td>Computerphile (Richard Clegg)</td><td>Video</td><td style="text-align:right">9 min</td></tr></tbody></table></div>
+<p><strong>If a Cloudflare page is inaccessible:</strong> use the
+<a href="reference.html#networking-basics-for-the-prep">course-written networking basics</a>
+instead of items 2–4. Item 5 already uses the public course walkthrough because
+the former NAT page was confirmed to return 404 in a browser. This is an
+equivalent full-credit reading path <strong>within</strong> the same time budget, not
+additional resources. An automated HTTP 403 does not
+by itself mean the original page is broken; no sign-in, subscription or security
+setting change is required to complete prep.</p>
+<p><strong>Use the remaining ~11 minutes for the policy overview and readiness check:</strong></p>
+<ul>
+<li><a href="../../docs/new_syllabus.html">The authoritative syllabus</a> — read <em>Individual Work and AI Use</em> and <em>Safe Use of Course Systems</em></li>
+<li><a href="../../docs/ai-use-policy.html">The AI-use policy</a> — you will be asked to apply it in Week 1</li>
+</ul>
+<hr>
+<h2 id="how-to-read-each-one">How to read each one</h2>
+<p>Do not read passively. Each item below has <strong>one question to hold in your head</strong> while you
+read it, and that question is what the readiness check is drawn from.</p>
+<h3 id="1-network-stacks-and-the-internet-11-min-video">1. Network Stacks and the Internet <em>(11 min, video)</em></h3>
+<blockquote>
+<p><strong>Hold this question:</strong> why is the stack built in layers at all, rather than as one
+protocol that does everything?</p>
+</blockquote>
+<p>The answer — that each layer can be replaced without rewriting the others — is why we can
+run HTTP/3 over QUIC over UDP without changing a single application. Week 1 Block C shows
+you that substitution happening.</p>
+<h3 id="2-what-is-the-osi-model-7-min">2. What is the OSI Model? <em>(7 min)</em></h3>
+<blockquote>
+<p><strong>Hold this question:</strong> which layer does an IP address belong to, and which layer does a
+MAC address belong to?</p>
+</blockquote>
+<p>You will use exactly that distinction in Block B. <strong>You do not need to memorise all seven
+layers</strong>, and nobody will ask you to recite them. You need layers 2, 3, 4 and 7, and you
+need to know that the OSI model is a teaching tool while TCP/IP is what actually runs.</p>
+<h3 id="3-what-is-an-ip-address-5-min">3. What is an IP Address? <em>(5 min)</em></h3>
+<blockquote>
+<p><strong>Hold this question:</strong> what makes an address <em>private</em>, and what does that prevent?</p>
+</blockquote>
+<h3 id="4-what-is-a-subnet-6-min--the-most-important-one">4. What is a Subnet? <em>(6 min)</em> — <strong>the most important one</strong></h3>
+<blockquote>
+<p><strong>Hold this question:</strong> given an address and a mask, how do you decide whether another
+address is on the same subnet?</p>
+</blockquote>
+<p>If you read only one item, read this one, and <strong>practise the arithmetic until it is boring.</strong>
+Convert these four to CIDR before class:</p>
+<pre><code class="language-text">255.255.255.0    -&gt; /?      255.255.128.0  -&gt; /?
+255.255.255.192  -&gt; /?      255.240.0.0    -&gt; /?
+</code></pre>
+<details>
+<summary>Check yourself</summary>
+
+<p><code>/24</code>, <code>/17</code>, <code>/26</code>, <code>/12</code>. Count the ones in binary: 255 is eight ones, 128 is <code>1000 0000</code>
+(one), 192 is <code>1100 0000</code> (two), 240 is <code>1111 0000</code> (four).</p>
+</details>
+
+<h3 id="5-what-is-nat-5-min">5. What is NAT? <em>(5 min)</em></h3>
+<blockquote>
+<p><strong>Hold this question:</strong> if your laptop&#39;s address is private, how does a reply from a web
+server ever find its way back to you?</p>
+</blockquote>
+<p>Use the course-written explanation linked in item 5. Keep the jobs separate:
+<strong>DHCP configures the host; NAT/NAPT translates address/port mappings.</strong>
+They may run on the same router, but neither is a synonym for the other.</p>
+<h3 id="6-rfc-2131-12-6-min-skim">6. RFC 2131 §1–2 <em>(6 min, skim)</em></h3>
+<p><strong>Sections 1 and 2 only.</strong> Do not read the whole RFC — it is 45 pages and the rest is not
+assigned.</p>
+<blockquote>
+<p><strong>Hold this question:</strong> DHCP is the first spec you will read in this course. What does the
+<em>register</em> of a specification feel like compared to a tutorial?</p>
+</blockquote>
+<p>That is a real learning objective. By Week 8 you will be reading OAuth and OIDC specs to
+settle arguments, and getting used to the tone now is worth six minutes.</p>
+<h3 id="7-transport-layer-and-udp-explained-9-min-video">7. Transport Layer and UDP Explained <em>(9 min, video)</em></h3>
+<blockquote>
+<p><strong>Hold this question:</strong> name one thing TCP does for you that UDP does not, and one
+situation where you would not want it done.</p>
+</blockquote>
+<hr>
+<h2 id="optional-enrichment--not-assigned-not-tested">Optional enrichment — not assigned, not tested</h2>
+<p>Only if the core felt easy:</p>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1918.html">RFC 1918 — private address allocation</a> — short and readable, and it is where <code>10.</code>, <code>172.16.</code>, and <code>192.168.</code> were decided</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc9293.html">RFC 9293 — TCP</a> — §3.5, connection establishment, is four pages and is the definitive account of the handshake</li>
+<li><a href="https://wizardzines.com/">Julia Evans — networking zines and posters</a> — illustrated, excellent if diagrams work better for you than prose</li>
+</ul>
+<hr>
+<h2 id="bring-to-class">Bring to class</h2>
+<ul>
+<li><input disabled="" type="checkbox"> A laptop you can run <code>curl</code> and a terminal on</li>
+<li><input disabled="" type="checkbox"> <strong>Wireshark installed and confirmed working</strong> — <a href="https://www.wireshark.org/download.html">wireshark.org/download.html</a>. Open it before class and check that your network interface appears in the list. If it does not, that is fine, and there is a full-credit alternative path in the lab — but find out <strong>now</strong>, not at minute 20 of the lab.</li>
+<li><input disabled="" type="checkbox"> Choose a Week 2 DNS path using <a href="../../docs/getting-started.html#6-dig-without-an-obsolete-windows-installer">the supported dig setup</a>:
+existing WSL/Linux, the course shell, or supplied trace analysis with native
+DNS observations. No current ISC Windows BIND installer is required.</li>
+<li><input disabled="" type="checkbox"> Node.js <strong>24 LTS</strong> installed (for helper scripts and the first web app)</li>
+</ul>
+<hr>
+<h2 id="readiness-check--5-questions">Readiness check — 5 questions</h2>
+<p>In D2L. Auto-graded, <strong>two attempts</strong>, counts toward participation. Do it after the reading
+and before class; it takes about five minutes.</p>
+<p>Questions 1–4 check the reading. <strong>Question 5 does not have a lookup-able answer</strong> — it is
+there to surface what you actually believe, and it is the one the session opens on. Answer it
+honestly rather than correctly.</p>
+<hr>
+<p><a id="instructor-only"></a></p>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

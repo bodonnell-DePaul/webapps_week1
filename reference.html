@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 1 public reference — trace a request without overclaiming - CSC 436</title>
+<link rel="stylesheet" href="../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../docs/getting-started.html">Start here</a>
+<a href="../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../docs/course-map.html">Course map</a>
+<a href="../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="reference.md" download>Download Markdown source</a></p>
+<h1 id="week-1-public-reference--trace-a-request-without-overclaiming">Week 1 public reference — trace a request without overclaiming</h1>
+<p>Use this as a lookup while completing the lab/HW1, not an additional prep
+assignment. <a href="../../docs/getting-started.html">Getting started</a> teaches terminals,
+Git and domain access; <a href="../../docs/web-foundations.html">web foundations</a> teaches
+the first page, CSS and DOM. Generated class notes contain visible slides only.</p>
+<h2 id="vocabulary-to-keep-separate">Vocabulary to keep separate</h2>
+<ul>
+<li><strong>Browser/client:</strong> asks for resources and renders/interacts with them.</li>
+<li><strong>Server:</strong> a process listening at an address and port; not necessarily a
+physical machine. A container is another environment in which it can run.</li>
+<li><strong>IP address:</strong> a network-layer address. <strong>Port:</strong> identifies a transport
+endpoint on that address. <strong>DNS:</strong> maps names to records, not URLs to pages.</li>
+<li><strong>Subnet/prefix:</strong> helps decide whether a destination is on-link or needs a
+router. <strong>Gateway:</strong> a next-hop router, not necessarily your DNS/DHCP server.</li>
+<li><strong>Loopback:</strong> this machine&#39;s local path, not another device&#39;s address.
+<code>0.0.0.0</code> is a wildcard listener address, not the address you give a browser.</li>
+<li><strong>NAT/NAPT:</strong> translation of addresses and possibly ports. Ports can be
+preserved; compare the same connection at both ends before claiming a rewrite.</li>
+</ul>
+<h2 id="networking-basics-for-the-prep">Networking basics for the prep</h2>
+<p>The Internet stack separates responsibilities so a change at one layer need not
+rewrite every other layer. The OSI model is a teaching vocabulary, not a list of
+seven separate programs installed on a laptop:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Layer/job</th><th>Example</th><th>What to recognize</th></tr></thead><tbody><tr><td>Link, often called layer 2</td><td>Ethernet/Wi-Fi frames and MAC addresses</td><td>Delivery on one link</td></tr><tr><td>Network, layer 3</td><td>IP addressing and routing</td><td>Delivery across routed networks</td></tr><tr><td>Transport, layer 4</td><td>TCP/UDP ports</td><td>Conversations between processes</td></tr><tr><td>Application, layer 7</td><td>HTTP</td><td>Meaning of a request/response</td></tr></tbody></table></div>
+<p>A router forwards an IP packet in a new link-layer frame. The final IP
+destination normally stays the same while TTL/hop-limit changes; NAT is a
+separate mechanism that may translate addresses.</p>
+<p>An IPv4 address has 32 bits, written as four decimal octets. A <code>/26</code> prefix
+means 26 network bits and 6 host bits: 64 total addresses. For example,
+<code>192.168.40.20/26</code> belongs to <code>192.168.40.0</code> through <code>192.168.40.63</code>.
+In an ordinary subnet the first/last are network/broadcast, leaving 62 host
+addresses. <code>192.168.40.70</code> is outside that prefix. <code>/31</code> point-to-point links
+and <code>/32</code> host routes are special cases, not applications of the subtract-two rule.
+The <code>/26</code> mask is <code>255.255.255.192</code>; 192 is binary <code>11000000</code>.</p>
+<p>RFC 1918 private ranges are <code>10.0.0.0/8</code>, <code>172.16.0.0/12</code> (second octet
+16–31) and <code>192.168.0.0/16</code>. They can be routed inside private networks but
+are not globally unique public Internet destinations. An address outside these
+ranges is not automatically a usable public address: other special ranges exist.</p>
+<p>For a fresh DHCP lease, a client typically discovers servers, receives offers,
+broadcasts its selecting REQUEST so other servers know which offer it chose,
+and receives an acknowledgement. The lease can include address, mask, gateway,
+DNS resolver and expiry. Renewing an existing lease need not repeat all four
+steps. One physical router can perform gateway, DNS-forwarding and DHCP roles.</p>
+<h3 id="nat-and-return-traffic">NAT and return traffic</h3>
+<p><strong>DHCP configuration and NAT translation are different jobs.</strong> DHCP can assign
+the host&#39;s address, mask, gateway and DNS settings; a host can also be configured
+statically. NAT does not assign that local host configuration. A home router
+often runs both services, which can make short descriptions blur the distinction.</p>
+<p>At a NAT gateway, an outbound private address may be translated to a public
+address. NAPT also tracks ports so replies can be mapped to the initiating
+internal connection. The gateway can preserve a source port or choose another.
+That mapping is not application authorization and does not replace a firewall.
+IPv6 deployments commonly route without address translation.</p>
+<p>For example, a gateway could keep this mapping for one TCP connection:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Inside endpoint</th><th>Translated endpoint</th><th>Remote endpoint</th></tr></thead><tbody><tr><td><code>10.1.2.3:50210</code></td><td><code>203.0.113.7:60042</code></td><td><code>192.0.2.5:443</code></td></tr></tbody></table></div>
+<p>These are illustrative documentation values, <strong>not test targets or a captured
+connection</strong>. The server replies to <code>203.0.113.7:60042</code>; the gateway&#39;s mapping
+directs that reply back to <code>10.1.2.3:50210</code>. Another internal client gets a
+distinct applicable mapping so the gateway can distinguish the conversations.
+A port-forwarding rule is an explicit inbound configuration, not something a
+private address acquires merely because an app runs there.</p>
+<p>Before continuing, explain which state the reply relies on and why the same
+private address can be used in many unrelated homes without identifying one
+public destination.</p>
+<p><strong>Reference, not additional required prep:</strong> <a href="https://www.rfc-editor.org/rfc/rfc3022.html#section-2">RFC 3022, section 2 — Overview of
+traditional NAT</a> distinguishes
+Basic NAT (address translation) from NAPT (also translating transport identifiers).
+This informational RFC provides terminology; use the course walkthrough above
+for the assigned five-minute reading.</p>
+<h3 id="tcp-and-udp">TCP and UDP</h3>
+<p>TCP supplies a reliable, ordered byte stream with loss recovery; UDP sends
+datagrams without providing those guarantees itself. An application can choose
+to add reliability or tolerate loss. QUIC builds a reliable encrypted transport
+over UDP—it does not make raw UDP inherently reliable.</p>
+<h2 id="what-an-observation-establishes">What an observation establishes</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Observation</th><th>Supports</th><th>Does not establish</th></tr></thead><tbody><tr><td>Wi-Fi connected</td><td>Local attachment</td><td>Internet access or a healthy website</td></tr><tr><td>DNS answer</td><td>That resolver&#39;s answer at that moment</td><td>Every user&#39;s answer</td></tr><tr><td>TCP handshake</td><td>A transport connection was accepted</td><td>A functional API</td></tr><tr><td>Immediate refusal</td><td>An active rejection</td><td>Which device rejected it, or absence of firewall policy</td></tr><tr><td>Timeout</td><td>The requested operation did not finish in the deadline</td><td>A unique cause, or that no bytes ever moved</td></tr><tr><td>Successful TLS validation</td><td>This client&#39;s chain/name/time/trust checks passed</td><td>Correct application authorization or trustworthy business content</td></tr><tr><td>Painted page</td><td>Some rendering completed</td><td>Every script/API request completed or controls work</td></tr></tbody></table></div>
+<p>Inspect curl&#39;s error <strong>text</strong>, connection progress and timings together.
+Exit 7 is not exclusively refusal; <code>time_connect</code> alone is not a
+refusal-versus-timeout discriminator. Record environmental differences honestly.</p>
+<h2 id="capture-and-privacy-checklist">Capture and privacy checklist</h2>
+<ol>
+<li>Capture only your own authorized traffic, with a narrow filter and short
+duration. Keep unrelated applications out of the capture.</li>
+<li>DNS may be cached or encrypted even when using curl. No visible DNS packet
+does not prove the lookup failed.</li>
+<li>TLS encrypts HTTP content; some handshake metadata remains visible. A new
+resumed TLS connection still sends ClientHello. Reusing an existing
+connection may avoid a new handshake entirely.</li>
+<li>Use the supplied fallback for unavailable stages and label which bytes were
+captured versus reconstructed. It earns full credit with the required analysis.</li>
+<li>Sanitize HARs, cookies, authorization values, host/device identifiers and
+public addresses before submission or sharing with an assistant.</li>
+</ol>
+<p>Each annotation should distinguish <strong>observation → hypothesis → confirming or
+falsifying check</strong>. Do not turn a plausible explanation into a proven cause.
+The <a href="../../docs/non-ai-review-artifacts.html#hw1---capture-interpretation-draft">HW1 supplied review draft</a>
+provides the no-personal-AI route; your interpretation and evidence remain yours.</p>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

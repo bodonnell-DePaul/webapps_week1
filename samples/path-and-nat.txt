@@ -1,0 +1,244 @@
+CSC 436 — Week 1 — Names, paths, and the address you are not
+Real output. Captured 2026-08-15. Sanitised per samples/README.md.
+================================================================================
+
+
+PART 1 — A NAME IS NOT AN ADDRESS, AND THE ANSWER IS NOT UNIVERSAL
+--------------------------------------------------------------------------------
+
+    $ nslookup www.depaul.edu
+
+    Server:  UnKnown
+    Address:  10.0.254.4                    # the resolver from `ipconfig`, line 8
+
+    Name:    22b8cde06cfddd89.vercel-dns-013.com
+    Addresses:  64.239.109.1
+              64.239.123.1
+    Aliases:  www.depaul.edu                # <-- www.depaul.edu is a CNAME
+
+  Three things worth stopping on:
+
+  a) "Server: UnKnown" is not an error. nslookup tried to reverse-resolve
+     10.0.254.4 to a name, and no PTR record exists. The forward lookup that
+     follows worked fine. Students report this as a failure every single year.
+
+  b) `www.depaul.edu` is an ALIAS. The real name is a per-tenant hostname at a
+     CDN. A university's front door is a rented address at a platform, which is
+     the normal shape of the modern web and the reason Week 5 exists.
+
+  c) TWO addresses came back for one name. Not a mistake — that is redundancy,
+     and the client picks one. Which one it picks is a client decision that no
+     line of your application code participates in.
+
+  Compare this against `curl-verbose.txt`, captured for Block A on the same day
+  from a different network: a different address, a different issuer, a different
+  negotiated protocol version. NEITHER IS WRONG. The same name genuinely answers
+  differently depending on who asks, from where, and when. Week 2 is about who
+  gave you that answer and how long you are stuck with it.
+
+
+PART 2 — ping AND traceroute FAILING PROVES ALMOST NOTHING
+--------------------------------------------------------------------------------
+
+    $ ping -n 4 www.depaul.edu
+
+    Pinging 22b8cde06cfddd89.vercel-dns-013.com [64.239.123.193] with 32 bytes of data:
+    Request timed out.
+    Request timed out.
+    Request timed out.
+    Request timed out.
+
+    Ping statistics for 64.239.123.193:
+        Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+    $ ping -n 2 10.0.0.1                      # our own default gateway
+
+    Pinging 10.0.0.1 with 32 bytes of data:
+    Request timed out.
+    Request timed out.
+
+  100% loss to the site. 100% loss to our own gateway. By the naive reading, this
+  machine has no network at all.
+
+    $ curl -sS -o NUL -w "%{http_code}\n" https://www.depaul.edu/
+    200
+
+  The site is up. The gateway is forwarding. The network is fine.
+
+  WHY: `ping` and `traceroute` use ICMP. HTTPS uses TCP. They are different
+  protocols with different filtering policies, and dropping ICMP is a default on
+  a very large fraction of cloud networks, corporate networks, and CDNs.
+
+  ****  ICMP unreachable is EVIDENCE ABOUT ICMP. It is not evidence about your  ****
+  ****  service. "I pinged it and it didn't respond" is not a diagnosis.        ****
+
+  A caveat, so you do not over-learn this: blanket ICMP blocking is COMMON, but it
+  is not good practice. ICMP carries Fragmentation Needed / Packet Too Big, which
+  Path MTU Discovery depends on. Drop those and you get the classic "the handshake
+  works, small requests work, and large uploads hang forever" failure. On IPv6 it
+  is worse — ICMPv6 is not optional, because Neighbor Discovery runs on it. So:
+  expect ICMP to be filtered, do not conclude that filtering it was wise.
+
+  The correct instinct when ping fails: test the port you actually care about.
+
+    Windows   Test-NetConnection www.depaul.edu -Port 443
+    any OS    curl -sS -o NUL -w "%{http_code} %{time_total}s\n" https://host/
+    Linux/mac nc -vz host 443
+
+
+PART 3 — traceroute AGAINST A NETWORK THAT DROPS ICMP
+--------------------------------------------------------------------------------
+
+    $ tracert -d -h 15 -w 900 www.depaul.edu
+
+    Tracing route to 22b8cde06cfddd89.vercel-dns-013.com [64.239.123.193]
+    over a maximum of 15 hops:
+
+      1     1 ms     2 ms     1 ms  10.0.254.23
+      2     *        *        *     Request timed out.
+      3     *        *        *     Request timed out.
+      4     *        *        *     Request timed out.
+      5     *        *        *     Request timed out.
+      6     *        *        *     Request timed out.
+      7     *        *        *     Request timed out.
+      8     *        *        *     Request timed out.
+      9     *        *        *     Request timed out.
+     10     *        *        *     Request timed out.
+     11     *        *        *     Request timed out.
+     12     *        *        *     Request timed out.
+     13     *        *        *     Request timed out.
+     14     *        *        *     Request timed out.
+     15     *        *        *     Request timed out.
+
+    Trace complete.
+
+  How traceroute works: send a packet with TTL=1. The first router decrements TTL
+  to 0, discards it, and — if it is configured to — returns ICMP Time Exceeded,
+  which reveals its address. Then TTL=2, TTL=3, and so on. Every hop you see is a
+  router that chose to answer.
+
+  WHAT THE PROBE ITSELF IS depends on the tool, and it matters when one works and
+  another does not:
+
+    Windows  tracert          ICMP Echo Request probes
+    Linux    traceroute       UDP probes to high ports, by default
+    macOS    traceroute       UDP probes, by default
+    any      traceroute -I    force ICMP Echo probes
+    any      traceroute -T    force TCP SYN probes (often the only one that works,
+                              because it looks like real traffic)
+
+  So a network that drops ICMP Echo may still answer `traceroute -T -p 443`. If
+  you need the path badly, change the probe before you conclude the path is broken.
+
+  So a row of asterisks means "this hop did not send ICMP Time Exceeded." It does
+  NOT mean the packet stopped there. Our packets are demonstrably reaching the
+  destination — the HTTPS request in Part 2 succeeded over this exact path.
+
+  Two more things in this output that reward reading:
+
+  * Hop 1 is 10.0.254.23. Our configured default gateway is 10.0.0.1. Those are
+    different addresses. On a software-defined cloud network, the first device to
+    decrement TTL is not necessarily the address in your route table. On a home
+    network hop 1 will be your router and will match. When they disagree, that is
+    information about your network, not a bug.
+
+  * The name resolved to 64.239.123.193 here, but 64.239.109.1 / 64.239.123.1 in
+    Part 1, and 64.239.109.65 in Part 4 below. Same name, three different answers,
+    minutes apart. That is a load-balancing DNS answer set, and it is why "it works
+    for me" and "it fails for me" can both be true at the same instant.
+
+
+PART 4 — WHAT THE FAR END ACTUALLY SEES: NAT, IN EVIDENCE
+--------------------------------------------------------------------------------
+This is the proof that the address in `ipconfig` is not the address you are.
+
+    $ curl -sS -v https://www.depaul.edu/ -o NUL
+    *   Trying 64.239.109.65:443...
+    * ALPN: curl offers http/1.1
+    * Host www.depaul.edu:443 was resolved.
+    * IPv6: (none)
+    * IPv4: 64.239.109.65, 64.239.123.65
+    * ALPN: server accepted http/1.1
+    * Established connection to www.depaul.edu (64.239.109.65 port 443) from 10.0.20.252 port 49302
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                          our side of the socket
+    * using HTTP/1.x
+    > GET / HTTP/1.1
+    > Host: www.depaul.edu
+    > User-Agent: curl/8.21.0
+    > Accept: */*
+    >
+    < HTTP/1.1 200 OK
+    < Age: 9
+    < Cache-Control: public, max-age=0, must-revalidate
+    < Content-Length: 238142
+    < Content-Type: text/html; charset=utf-8
+    < Date: Thu, 30 Jul 2026 20:35:28 GMT
+    < Server: Vercel
+    < Set-Cookie: sc_site=depaul; Path=/; Secure; HttpOnly; SameSite=none
+    < Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+    < X-Vercel-Cache: STALE
+    < X-Vercel-Id: pdx1::iad1::8fn5v-1786823500405-641523c93bfa
+    <
+    * Connection #0 to host www.depaul.edu:443 left intact
+
+  Our socket, as this machine understands it:   10.0.20.252 : 49302
+
+  Now ask a server to report what it received. Two runs, seconds apart:
+
+    $ curl -sS https://ifconfig.me/all
+
+    run 1                                     run 2
+    -----                                     -----
+    ip_addr: 203.0.113.181                    ip_addr: 203.0.113.183
+    port:    55346                            port:    54706
+    via:     1.1 google                       via:     1.1 google
+    forwarded: 203.0.113.181,34.160.111.145   forwarded: 203.0.113.183,34.160.111.145
+
+    (public addresses replaced with RFC 5737 TEST-NET-3; the two runs really did
+     report two different addresses, and that difference is the point)
+
+  Line up the three facts:
+
+      what this host thinks it is        10.0.20.252 : 49302
+      what the server actually saw       203.0.113.181 : 55346
+      what changed                       the ADDRESS *and* the PORT
+
+  THE ADDRESS AND THE PORT WERE BOTH REWRITTEN IN FLIGHT. That is NAPT — Network
+  Address and Port Translation, what everyone means when they say "NAT". The
+  translator keeps a table:
+
+      inside 10.0.20.252:49302  <->  outside 203.0.113.181:55346  ->  64.239.109.65:443
+
+  and rewrites every packet in both directions. Consequences you will feel:
+
+   1. Return traffic only works because there is a table entry, and the entry only
+      exists because YOU went first. Nothing on the internet can *spontaneously*
+      open a connection to 10.0.20.252 — not the grader, not a friend, not a
+      webhook.
+
+      Be precise about the exceptions, because they are how real systems work:
+      an explicit port-forward, UPnP/NAT-PMP/PCP, a VPN, or simply having a public
+      IPv4 or a global IPv6 address all create inbound reachability. **NAT is an
+      addressing workaround, not a firewall.** Whether traffic is *allowed* is a
+      policy decision made somewhere else. Week 9 holds you to that distinction.
+
+   2. The entry expires. That is why long-lived idle connections die silently and
+      why WebSocket code in Week 7 sends keepalives.
+
+   3. Two consecutive requests left from two different public addresses, because
+      the egress is a pool, not a box. (Some NAT implementations also *preserve*
+      the source port when they can; this one did not. Read your own evidence
+      rather than assuming either behaviour.) Anything that pins a session to a
+      client IP is broken by this. Remember it in Week 8 when someone proposes
+      IP-based session validation, and in Week 9 when someone proposes IP
+      allow-listing.
+
+   4. `X-Vercel-Cache: STALE` and `Age: 9` say an edge node answered this, not an
+      origin server. `Server: Vercel` says the same. Week 5 is about those headers.
+
+  And the ONE-SENTENCE VERSION, which is the theme of this week:
+
+      Your machine's address is private, your source port is rewritten, and
+      nothing outside can initiate a connection to you. That is why "it works
+      on localhost" is not a claim about the world.

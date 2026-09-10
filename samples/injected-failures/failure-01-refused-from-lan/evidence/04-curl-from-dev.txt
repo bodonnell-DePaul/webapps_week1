@@ -1,0 +1,49 @@
+Run ON DEV'S LAPTOP, 2026-08-15 21:15. Same Wi-Fi, same room.
+
+================================================================================
+A) the failing request
+================================================================================
+
+$ curl -sS --max-time 6 -v http://192.168.1.47:8471/healthz
+*   Trying 192.168.1.47:8471...
+* connect to 192.168.1.47 port 8471 from 192.168.1.63 port 51884 failed: Connection refused
+* Failed to connect to 192.168.1.47 port 8471 after 3 ms: Connection refused
+* Closing connection
+curl: (7) Failed to connect to 192.168.1.47 port 8471 after 3 ms: Connection refused
+
+  (Dev is on macOS, so the message is worded "Connection refused" rather than the
+   Windows Schannel phrasing "Could not connect to server". Same exit code: 7.)
+
+
+================================================================================
+B) ping to the same host
+================================================================================
+
+$ ping -c 4 192.168.1.47
+PING 192.168.1.47 (192.168.1.47): 56 data bytes
+Request timeout for icmp_seq 0
+Request timeout for icmp_seq 1
+Request timeout for icmp_seq 2
+Request timeout for icmp_seq 3
+
+--- 192.168.1.47 ping statistics ---
+4 packets transmitted, 0 packets received, 100.0% packet loss
+
+
+================================================================================
+C) the other service on the same laptop, from Dev's machine
+================================================================================
+
+$ curl -sS --max-time 6 -o /dev/null -w "%{http_code} in %{time_total}s\n" http://192.168.1.47:3000/
+200 in 0.019s
+
+
+================================================================================
+D) Dev's own address, for reference
+================================================================================
+
+$ ipconfig getifaddr en0
+192.168.1.63
+
+$ netstat -rn | grep '^default'
+default            192.168.1.1        UGScg                 en0

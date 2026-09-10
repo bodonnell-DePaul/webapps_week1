@@ -1,0 +1,32 @@
+{
+  "week": "week01",
+  "checkpoints": [
+    {
+      "id": "w01-cp1",
+      "block": "A",
+      "minutes": 10,
+      "mode": "individual",
+      "format": "Solo (3 min) → self-check against the model map (4 min) → instructor debrief (3 min)",
+      "prompt": "Tell the story without the tools. (1) Draw the journey from joining Wi-Fi to using DePaul's home page, including the computer, local network, Internet, and website. (2) Mark one job before the page request and one after the first response. (3) Why can \"Wi-Fi connected\" be true while the page is not usable?",
+      "source": "presentations/src/week01-blockA.md"
+    },
+    {
+      "id": "w01-cp2",
+      "block": "B",
+      "minutes": 10,
+      "mode": "individual",
+      "format": "Solo (4 min) → cold call (3 min) → debrief (3 min)",
+      "prompt": "A service works for Priya on her own laptop, but not for Dev, who is testing it over the same Wi-Fi. Three artifacts: (A) a Windows `netstat -ano | findstr :8080` capture shows `TCP 127.0.0.1:8080 0.0.0.0:0 LISTENING 9134`; (B) a request to `http://192.168.1.47:8080/healthz` returns `curl: (7) ... Connection refused`; (C) a request to `http://192.168.1.47:3000/` returns 200 OK. 1. What is the cause? 2. Which artifact rules out a completely broken path? 3. Priya says \"let's just use port 80\" — what happens?",
+      "source": "weeks/week01/samples/injected-failures/failure-01-refused-from-lan/"
+    },
+    {
+      "id": "w01-cp3",
+      "block": "C",
+      "minutes": 10,
+      "mode": "individual",
+      "format": "Solo (4 min) → cold call (3 min) → debrief (3 min)",
+      "prompt": "Four users, four reports. Which link of the URL chain broke, and what evidence settles it? (1) \"Server not found.\" Their colleague at the next desk loads it fine. (2) Padlock warning on a phone; fine on both laptops in the room. (3) Page loads instantly but shows yesterday's incident list. (4) Page paints in 300 ms; buttons do nothing for four seconds.",
+      "source": "presentations/src/week01-blockC.md"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+Run ON PRIYA'S OWN LAPTOP, 2026-08-15 21:13. Three addresses, same machine, same port.
+
+================================================================================
+A) via the loopback address
+================================================================================
+
+C:\> curl -sS --max-time 6 -v http://127.0.0.1:8471/healthz
+*   Trying 127.0.0.1:8471...
+* Established connection to 127.0.0.1 (127.0.0.1 port 8471) from 127.0.0.1 port 58089
+> GET /healthz HTTP/1.1
+> Host: 127.0.0.1:8471
+> User-Agent: curl/8.21.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< content-type: application/json
+< cache-control: no-store
+<
+{"status":"ok","service":"campuspulse","boundTo":"127.0.0.1:8471"}
+* Connection #0 to host 127.0.0.1 left intact
+
+
+================================================================================
+B) via the name "localhost"
+================================================================================
+
+C:\> curl -sS --max-time 6 http://localhost:8471/healthz
+{"status":"ok","service":"campuspulse","boundTo":"127.0.0.1:8471"}
+
+
+================================================================================
+C) via THIS LAPTOP'S OWN WI-FI ADDRESS  --  still Priya's machine, not Dev's
+================================================================================
+
+C:\> curl -sS --max-time 6 -v http://192.168.1.47:8471/healthz
+*   Trying 192.168.1.47:8471...
+* connect to 192.168.1.47 port 8471 from 0.0.0.0 port 62631 failed: Connection refused
+* Failed to connect to 192.168.1.47:8471 after 2013 ms: Could not connect to server
+* closing connection #0
+curl: (7) Failed to connect to 192.168.1.47:8471 after 2013 ms: Could not connect to server
+
+
+================================================================================
+D) a control: something else on this laptop that IS reachable on the LAN address
+================================================================================
+
+C:\> curl -sS --max-time 6 -o NUL -w "%{http_code}\n" http://192.168.1.47:3000/
+200

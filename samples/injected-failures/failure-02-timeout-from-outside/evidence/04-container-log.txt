@@ -1,0 +1,22 @@
+ubuntu@campuspulse-demo:~$ docker logs --tail 40 --timestamps campuspulse-api
+
+2026-08-16T03:00:12.004Z  WARN  config key "trustProxyHeaders" is deprecated and will be
+2026-08-16T03:00:12.004Z  WARN  removed in v0.5. Use "proxy.trustForwardedFor" instead.
+2026-08-16T03:00:12.019Z  INFO  campuspulse v0.4.2 listening on 0.0.0.0:8080
+2026-08-16T03:00:12.019Z  INFO  health check: /healthz
+2026-08-16T03:00:12.020Z  INFO  ready
+2026-08-16T06:15:03.771Z  INFO  GET /healthz 200 0.9ms  src=127.0.0.1
+2026-08-16T07:02:41.118Z  INFO  GET /healthz 200 1.1ms  src=10.42.7.19
+2026-08-16T08:44:31.402Z  INFO  GET /healthz 200 1.0ms  src=127.0.0.1
+2026-08-16T08:44:39.887Z  INFO  GET /healthz 200 1.2ms  src=10.42.7.19
+2026-08-16T08:45:58.201Z  INFO  GET /healthz 200 0.8ms  src=127.0.0.1
+
+--- the same window, from the nightly grading run (03:10 - 03:13) ---
+
+(no entries)
+
+  Nothing at all was logged during the grading window. The application did not
+  receive a request, refuse a request, or error on a request. It saw nothing.
+
+  Every request it HAS served came from 127.0.0.1 or 10.42.7.19 — the box itself.
+  There is not a single log line in this file from an off-box source address.

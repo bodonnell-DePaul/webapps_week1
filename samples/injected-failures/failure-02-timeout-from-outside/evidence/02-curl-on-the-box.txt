@@ -1,0 +1,65 @@
+Run ON THE VM over SSH, 2026-08-16 08:44.
+
+================================================================================
+A) via loopback
+================================================================================
+
+ubuntu@campuspulse-demo:~$ curl -sS --max-time 6 -o /dev/null \
+    -w "%{http_code} in %{time_total}s\n" http://127.0.0.1:8080/healthz
+200 in 0.003s
+
+
+================================================================================
+B) via the VM's own private address
+================================================================================
+
+ubuntu@campuspulse-demo:~$ ip -4 -brief addr
+lo               UNKNOWN        127.0.0.1/8
+ens5             UP             10.42.7.19/20
+
+ubuntu@campuspulse-demo:~$ curl -sS --max-time 6 -o /dev/null \
+    -w "%{http_code} in %{time_total}s\n" http://10.42.7.19:8080/healthz
+200 in 0.004s
+
+  ^ this is the line that matters. The service answers on a NON-loopback address.
+
+
+================================================================================
+C) via the VM's own PUBLIC address, from the VM itself
+================================================================================
+
+ubuntu@campuspulse-demo:~$ curl -sS --max-time 15 -o /dev/null \
+    -w "%{http_code} in %{time_total}s\n" http://198.51.100.24:8080/healthz
+curl: (28) Operation timed out after 15001 milliseconds with 0 bytes received
+
+  ^ from the box, to the box, via the public address: also times out.
+
+
+================================================================================
+D) the reverse proxy in front of the app
+================================================================================
+
+ubuntu@campuspulse-demo:~$ sudo systemctl is-active caddy
+active
+
+ubuntu@campuspulse-demo:~$ curl -sS --max-time 6 -o /dev/null \
+    --resolve status.campuspulse-demo.example:443:127.0.0.1 \
+    -w "%{http_code} in %{time_total}s\n" \
+    https://status.campuspulse-demo.example/healthz
+200 in 0.011s
+
+  ^ note the technique. --resolve forces the connection to loopback while keeping
+    the real hostname for SNI and certificate validation, so this test does NOT
+    disable verification. Reaching for -k here would have destroyed the evidence
+    that the certificate is fine, which is exactly the mistake Block A opened on.
+
+
+================================================================================
+E) container state
+================================================================================
+
+ubuntu@campuspulse-demo:~$ docker ps --format '{{.Names}}\t{{.Status}}\t{{.Ports}}'
+campuspulse-api  Up 4 days (healthy)  0.0.0.0:8080->8080/tcp
+
+ubuntu@campuspulse-demo:~$ uptime
+ 08:44:57 up 11 days,  2:13,  1 user,  load average: 0.02, 0.05, 0.01

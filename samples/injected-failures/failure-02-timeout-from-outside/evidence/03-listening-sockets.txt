@@ -1,0 +1,29 @@
+Run ON THE VM, 2026-08-16 08:45.
+
+ubuntu@campuspulse-demo:~$ ss -ltnp
+State   Recv-Q  Send-Q   Local Address:Port    Peer Address:Port  Process
+LISTEN  0       4096           0.0.0.0:8080         0.0.0.0:*      users:(("docker-proxy",pid=1187,fd=4))
+LISTEN  0       4096              [::]:8080            [::]:*      users:(("docker-proxy",pid=1194,fd=4))
+LISTEN  0       511            0.0.0.0:80           0.0.0.0:*      users:(("caddy",pid=902,fd=7))
+LISTEN  0       511            0.0.0.0:443          0.0.0.0:*      users:(("caddy",pid=902,fd=9))
+LISTEN  0       4096           0.0.0.0:22           0.0.0.0:*      users:(("sshd",pid=744,fd=3))
+LISTEN  0       4096         127.0.0.1:5432       0.0.0.0:*        users:(("postgres",pid=812,fd=5))
+
+  Read the Local Address column.
+
+    :8080   0.0.0.0   every interface
+    :80     0.0.0.0   every interface
+    :443    0.0.0.0   every interface
+    :22     0.0.0.0   every interface
+    :5432   127.0.0.1 loopback only  <- deliberate. the database is not public.
+
+
+ubuntu@campuspulse-demo:~$ sudo ufw status verbose
+Status: inactive
+
+ubuntu@campuspulse-demo:~$ sudo iptables -L INPUT -n --line-numbers
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    DOCKER-USER  all  --  0.0.0.0/0           0.0.0.0/0
+
+  No host firewall is filtering anything on this VM.

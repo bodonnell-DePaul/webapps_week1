@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HW1 — Packet-to-Pixel Evidence Dossier - CSC 436</title>
+<link rel="stylesheet" href="../../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="../../docs/getting-started.html">Start here</a>
+<a href="../../docs/new_syllabus.html">Syllabus</a>
+<a href="../../docs/course-map.html">Course map</a>
+<a href="../../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="homework.md" download>Download Markdown source</a></p>
+<h1 id="hw1--packet-to-pixel-evidence-dossier">HW1 — Packet-to-Pixel Evidence Dossier</h1>
+<p><strong>CSC 436 — Web Application Systems: From URL to Operable Product</strong>
+Assigned: Week 1 · <strong>Due: start of Week 2 class</strong> · 100 points · <strong>Individual</strong></p>
+<blockquote>
+<p><strong>The point of this assignment, in one sentence.</strong> Prove that you can watch a single page
+load happen — from the DHCP lease that gave your laptop an address to the pixel on the
+screen — and read the evidence rather than guess at it.</p>
+</blockquote>
+<p>This is the first assignment of the quarter, so it also does a second job: it establishes
+the standard everything else is graded against. <strong>Read it twice.</strong> The
+<a href="#8-a-worked-example--the-depth-we-expect">worked example</a> shows the depth expected, and it
+is the most useful thing in this handout.</p>
+<hr>
+<h2 id="1-where-this-fits">1. Where this fits</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>Milestone it feeds</strong></td><td><strong>Week 1 charter — ungraded formative checkpoint.</strong> Arrange a domain or assigned subdomain in task 8; graded Gate 1 is Week 3.</td></tr><tr><td><strong>What it sets up</strong></td><td>Week 2 assumes you already own a domain and can delegate its nameservers. Week 4 assumes you can read a TLS handshake. Week 5 assumes you can read cache headers.</td></tr><tr><td><strong>The chain link it covers</strong></td><td>Links 1–6 of the URL chain, plus a first look at 7.</td></tr></tbody></table></div>
+<p>You will not do this work twice. Task 8&#39;s registrar becomes your project&#39;s registrar; task 5&#39;s
+<code>curl</code> habits become how you check every deploy for the rest of the quarter.</p>
+<hr>
+<h2 id="2-prerequisites">2. Prerequisites</h2>
+<p>Have these <strong>before</strong> you start, not while you are stuck at 23:00:</p>
+<ul>
+<li><input disabled="" type="checkbox"> A terminal you can run <code>curl</code> in (built into Windows 10+, macOS, and Linux)</li>
+<li><input disabled="" type="checkbox"> <strong>Wireshark</strong> installed — <a href="https://www.wireshark.org/download.html">wireshark.org/download.html</a>. See §6 if you cannot install or run it; there is a full-credit path.</li>
+<li><input disabled="" type="checkbox"> A browser with DevTools (Chrome, Edge, or Firefox)</li>
+<li><input disabled="" type="checkbox"> <strong>Node.js</strong> — only to run the two helper scripts in <code>weeks/week01/samples/</code></li>
+<li><input disabled="" type="checkbox"> A payment method for the domain (~$10–15), <strong>or</strong> the hardship path in §5 — which needs no explanation and costs no points</li>
+<li><input disabled="" type="checkbox"> Your individual project scope and ownership plan; no team formation is required or permitted</li>
+</ul>
+<hr>
+<h2 id="3-the-nine-tasks">3. The nine tasks</h2>
+<p>Each task produces a numbered artifact. Every artifact goes in your dossier with your own
+written interpretation. Missing interpretation loses the relevant evidence marks;
+it does not automatically erase independently demonstrated domain understanding.
+As in the syllabus, each rubric row is evaluated 60% domain content and 40%
+evidence. Safety/integrity rules remain separate.</p>
+<hr>
+<h3 id="task-1--your-own-network-identity-10-pts">Task 1 — Your own network identity (10 pts)</h3>
+<p>Capture your machine&#39;s answer to <em>&quot;where am I on the network?&quot;</em> and read it.</p>
+<pre><code class="language-bash"># Windows
+ipconfig /all
+route print -4
+arp -a
+
+# macOS
+ifconfig
+netstat -rn -f inet
+arp -a
+
+# Linux
+ip addr
+ip route
+ip neigh
+</code></pre>
+<p><strong>Then write, in your own words:</strong></p>
+<ol>
+<li>Your IPv4 address, subnet mask, and the mask <strong>converted to CIDR notation, showing the
+binary</strong>. State how many usable addresses the subnet holds.</li>
+<li>Your default gateway, DHCP server, and DNS resolver. <strong>Are they the same machine?</strong> If
+they are, say what three separate jobs that one box is doing.</li>
+<li>Your DHCP lease obtained/expiry times, and what a lease expiring in 12 hours versus one
+expiring in 2162 tells you about who manages your address.</li>
+<li>One entry in your route table that is <strong>not</strong> the default route and not your own subnet,
+and what it is for.</li>
+<li>Whether your address is private (RFC 1918) or public, and how you can tell without
+looking anything up.</li>
+</ol>
+<blockquote>
+<p><strong>If a field genuinely does not exist on your machine, write <code>N/A — not present</code> and show
+the command output that proves it.</strong> A statically configured host has no DHCP lease; a
+minimal route table may have nothing beyond the default and the local subnet; some
+platforms do not report the DHCP server at all. <strong>Documenting an absence with evidence is a
+complete answer and earns full marks.</strong> Inventing a plausible value is not.</p>
+</blockquote>
+<p><strong>Artifact:</strong> <code>01-network-config.txt</code> — the raw command output, sanitised, with your written
+answers below it.</p>
+<blockquote>
+<p><strong>Redact before you submit:</strong> host name, MAC addresses (keep the vendor OUI, mask the rest),
+IPv6 interface identifiers, and any Wi-Fi SSID. <strong>Leave private addresses intact</strong> — they
+identify nobody and they are the evidence. See
+<a href="samples/network-config.txt"><code>samples/network-config.txt</code></a> for exactly how.</p>
+</blockquote>
+<hr>
+<h3 id="task-2--your-socket-and-port-map-10-pts">Task 2 — Your socket and port map (10 pts)</h3>
+<pre><code class="language-bash"># Windows
+netstat -ano
+Get-NetTCPConnection -State Listen | Format-Table LocalAddress,LocalPort,OwningProcess
+
+# macOS
+lsof -nP -iTCP -sTCP:LISTEN
+
+# Linux
+ss -ltnp
+</code></pre>
+<p><strong>Then:</strong></p>
+<ol>
+<li>List <strong>two listeners you can account for</strong> plus <strong>every listener bound to a wildcard
+address</strong> (<code>0.0.0.0</code>, <code>*</code>, or <code>[::]</code>). You do not need to explain all forty things a modern
+OS listens on — but the wildcard ones are the ones reachable from elsewhere, so name them.</li>
+<li>Identify at least one listener bound to <code>127.0.0.1</code> and at least one bound to <code>0.0.0.0</code>.
+<strong>Explain the operational difference in one sentence each.</strong> If your machine genuinely has
+no loopback-only listener, say so and start the lab&#39;s stub server to create one.</li>
+<li>Find one <strong>connected</strong> socket and write out its full four-tuple. Say which end chose the
+client port and where that number came from.</li>
+<li>Report your platform&#39;s ephemeral port range and the command that told you.</li>
+</ol>
+<p><strong>Artifact:</strong> <code>02-socket-map.txt</code></p>
+<blockquote>
+<p><strong>If you find something listening on <code>0.0.0.0</code> that you did not intend to expose, say so.</strong>
+Noticing it is worth more than a tidy answer.</p>
+</blockquote>
+<hr>
+<h3 id="task-3--the-three-failure-shapes-10-pts">Task 3 — The three failure shapes (10 pts)</h3>
+<p>Reproduce all three, verbatim, and record the exit codes.</p>
+<pre><code class="language-bash"># refused — expect exit 7
+curl -sS --max-time 8 -v http://127.0.0.1:9/
+
+# timed out — expect exit 28
+curl -sS --max-time 8 -v http://192.0.2.1/
+
+# reset — expect exit 56  (two terminals)
+node weeks/week01/samples/abort-server.mjs
+curl -sS --max-time 8 -v http://127.0.0.1:8472/
+</code></pre>
+<p><strong>Then write, for each:</strong> what happened on the wire in packets; what the symptom <strong>rules
+out</strong>; and the first command you would run next to narrow it further.</p>
+<blockquote>
+<p><strong>If a command does not behave as described, that is a finding, not a failure — write it
+up.</strong> These reproductions rely on your environment:</p>
+<ul>
+<li><strong>Port 9 (discard)</strong> is normally closed on a desktop, but some systems enable it and
+some host firewalls filter it, which would give you a timeout instead of a refusal. If
+port 9 misbehaves, use any other port with nothing on it and say which you used.</li>
+<li><strong><code>192.0.2.1</code></strong> is <a href="https://www.rfc-editor.org/rfc/rfc5737.html">RFC 5737</a> TEST-NET-1 and
+is normally routed nowhere, so the SYN is discarded silently. Some networks return an
+ICMP unreachable instead, which produces a <strong>fast</strong> failure rather than a timeout — a
+genuinely interesting result, and worth two sentences if it happens to you.</li>
+<li><strong>The reset case</strong> uses <code>socket.resetAndDestroy()</code>, which needs <strong>Node 18.3 or newer</strong>.
+Check with <code>node --version</code>. On older Node the script falls back to <code>destroy()</code>, which
+usually but not always produces a RST.</li>
+</ul>
+<p>Documenting <em>why</em> your result differed, with evidence, earns the same marks as the
+expected result. Inventing the expected output does not.</p>
+</blockquote>
+<p><strong>Artifact:</strong> <code>03-failure-shapes.txt</code></p>
+<hr>
+<h3 id="task-4--a-packet-capture-of-a-real-page-load-20-pts">Task 4 — A packet capture of a real page load (20 pts)</h3>
+<p><strong>This is the largest single artifact. Budget accordingly.</strong></p>
+<blockquote>
+<h3 id="-dns-over-https-will-make-filter-1-match-nothing">⚠ DNS over HTTPS will make filter 1 match nothing</h3>
+<p>Chrome and Edge ship &quot;Secure DNS&quot; in automatic mode and Firefox enables DoH by default in
+some regions. When it is active your DNS query is encrypted inside TLS, there is no UDP/53
+traffic, and <code>dns</code> matches zero packets — which looks exactly like a broken capture.</p>
+<p>Try <code>curl</code> to simplify the capture, but do not assume it emits UDP/53:
+cached answers and OS/app encrypted DNS can suppress it. Record an absent
+exchange and use the supplied DNS fixture for that part. Do not change
+managed security settings; the full-credit fallback applies to partial captures too.</p>
+</blockquote>
+<ol>
+<li><p>Start a Wireshark capture on your active interface with the capture filter:
+<code>host &lt;a site you choose&gt; or port 53</code></p>
+</li>
+<li><p>Generate the traffic. Either <code>curl -sS https://&lt;site&gt;/ -o /dev/null</code> (reliable), or load
+the page in a browser with a <strong>cleared cache</strong> (DevTools → Network → Disable cache, or a
+private window) and Secure DNS disabled.</p>
+</li>
+<li><p>Stop the capture. Save as <code>04-capture.pcapng</code>.</p>
+</li>
+<li><p>Apply each display filter below in turn and screenshot or export the matching packets:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Link</th><th>Filter</th></tr></thead><tbody><tr><td>DNS</td><td><code>dns</code></td></tr><tr><td>TCP handshake</td><td><code>tcp.flags.syn == 1</code></td></tr><tr><td>TLS ClientHello</td><td><code>tls.handshake.type == 1</code></td></tr><tr><td>HTTP</td><td><code>http.request</code></td></tr></tbody></table></div>
+</li>
+<li><p><strong>Annotate all four</strong>, in the structure demonstrated in
+<a href="samples/capture-walkthrough.html"><code>samples/capture-walkthrough.md</code></a>. For each stage:
+<em>what the bytes say · what it proves · what it does not prove · how you would check
+independently.</em></p>
+</li>
+</ol>
+<p><strong>Artifacts:</strong> <code>04-capture.pcapng</code> and <code>04-capture-annotated.md</code></p>
+<blockquote>
+<p><strong><code>http.request</code> will match nothing on an HTTPS page.</strong> That is not a broken filter — it is
+TLS working, and saying so is part of the answer. If you want to see the HTTP layer in the
+clear, capture one plaintext request to a site you control or to <code>http://example.com/</code>.</p>
+</blockquote>
+<blockquote>
+<p><strong>Cannot capture?</strong> See §6. The alternative path is worth full marks.</p>
+</blockquote>
+<hr>
+<h3 id="task-5--a-curl--v-trace-and-a-timing-breakdown-10-pts">Task 5 — A <code>curl -v</code> trace and a timing breakdown (10 pts)</h3>
+<pre><code class="language-bash">curl -sS -v https://&lt;your chosen site&gt;/ -o /dev/null      # NUL on Windows
+
+curl -sS -o /dev/null -w &quot;dns=%{time_namelookup} tcp=%{time_connect} \
+tls=%{time_appconnect} ttfb=%{time_starttransfer} total=%{time_total}\n&quot; \
+https://&lt;your chosen site&gt;/
+</code></pre>
+<p><strong>Then:</strong> identify in the verbose output the line proving name resolution, the line proving
+the TLS version and cipher, the certificate subject and issuer, and the negotiated HTTP
+version. From the timing numbers, compute the <strong>gap</strong> for each phase and name the single
+most expensive one.</p>
+<p><strong>Artifact:</strong> <code>05-curl-trace.txt</code></p>
+<hr>
+<h3 id="task-6--devtools-har-and-waterfall-10-pts">Task 6 — DevTools HAR and waterfall (10 pts)</h3>
+<ol>
+<li>Open DevTools → Network, disable cache, reload, and <strong>export the HAR</strong>.</li>
+<li>Screenshot the waterfall.</li>
+<li>Pick the <strong>single slowest request</strong> and break its timing into queueing, DNS, connect,
+TLS, request sent, waiting (TTFB), and download.</li>
+<li>Answer: how many requests, how many bytes, how many distinct hosts? Which requests
+blocked rendering?</li>
+<li>Answer: which of the URL chain&#39;s twelve links does a HAR show, and which does it not?</li>
+</ol>
+<p><strong>Artifacts:</strong> <code>06-network.har</code> and <code>06-waterfall.md</code></p>
+<blockquote>
+<p><strong>A HAR can contain cookies, <code>Authorization</code> headers, and full request bodies.</strong> Open it in
+a text editor and check before you submit. Replace values with <code>[REDACTED:cookie]</code> — do not
+delete the field, because the presence of the field is itself evidence. This is graded.</p>
+</blockquote>
+<hr>
+<h3 id="task-7--diagnose-the-two-instructor-injected-failures-12-pts">Task 7 — Diagnose the two instructor-injected failures (12 pts)</h3>
+<p>The bundles are in
+<a href="samples/injected-failures/index.html"><code>samples/injected-failures/</code></a>. Read that folder&#39;s README first;
+it defines the five-part format your write-up must use.</p>
+<ul>
+<li><a href="samples/injected-failures/failure-01-refused-from-lan/index.html">Failure 01 — refused from the LAN</a></li>
+<li><a href="samples/injected-failures/failure-02-timeout-from-outside/index.html">Failure 02 — timeout from outside</a></li>
+</ul>
+<p>200–350 words each. <strong>The answer to the first is not the answer to the second.</strong></p>
+<blockquote>
+<p><strong>A wrong diagnosis with correct reasoning from the evidence earns most of the credit. A
+right diagnosis with no reasoning earns very little.</strong> Naming a cause you ruled out, and
+the specific file that ruled it out, is worth as much as naming the right one.</p>
+</blockquote>
+<p><strong>Artifact:</strong> <code>07-failure-diagnoses.md</code></p>
+<hr>
+<h3 id="task-8--arrange-a-domain-or-course-subdomain-and-prove-control-8-pts">Task 8 — Arrange a domain or course subdomain, and prove control (8 pts)</h3>
+<p>Choose the <strong>no-cost course subdomain</strong> or register a personal domain. Both earn
+the same points. For a course subdomain, submit the redacted assignment/control
+record, the parent-zone ownership explanation and the TXT proof below instead
+of a purchase dashboard and WHOIS output. Personal registration is typically
+$10–15 for year one; check renewal pricing and taxes before agreeing.</p>
+<p>Suggested registrars — all support the delegation and DNSSEC work Week 2 needs, and none
+require an upsell:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Registrar</th><th>Typical <code>.com</code> first year</th><th>Note</th></tr></thead><tbody><tr><td><a href="https://www.cloudflare.com/products/registrar/">Cloudflare Registrar</a></td><td>~$10, at-cost</td><td>No markup, but you must use Cloudflare DNS</td></tr><tr><td><a href="https://www.namecheap.com/">Namecheap</a></td><td>~$10–15</td><td>Free WHOIS privacy</td></tr><tr><td><a href="https://porkbun.com/">Porkbun</a></td><td>~$10–12</td><td>Free WHOIS privacy, good API</td></tr><tr><td><a href="https://domains.squarespace.com/">Google Domains → Squarespace</a></td><td>~$20</td><td>Fine, slightly pricier</td></tr></tbody></table></div>
+<p>Cheaper TLDs (<code>.xyz</code>, <code>.dev</code>, <code>.app</code>) are fine. <strong><code>.dev</code> and <code>.app</code> are HSTS-preloaded, so
+they require HTTPS from the first request</strong> — that is a Week 4 constraint, not a Week 1 one,
+and it is a perfectly good choice if you want it.</p>
+<p><strong>Prove control</strong> with all three:</p>
+<ol>
+<li>A screenshot of your registrar dashboard showing the domain and its expiry — <strong>redact
+your account email, name, and address.</strong></li>
+<li>Registrar/RDAP registration data (or <code>whois</code> if supported) showing registrar and
+creation date; no extra WHOIS tool installation is required (redact registrant
+contact details; WHOIS privacy will usually have done this already).</li>
+<li><strong>Proof you can change something.</strong> The instructor will issue you a <strong>random verification
+nonce</strong> in D2L (it looks like <code>csc436-7f3a91c2</code>). Add it as a TXT record on your domain,
+then show it resolving:<pre><code class="language-bash">dig +short TXT &lt;yourdomain&gt;          # Linux/macOS
+nslookup -type=TXT &lt;yourdomain&gt;      # Windows
+</code></pre>
+<strong>Delete the TXT record once your grade is posted.</strong> DNS is a globally readable public
+database — do not put your campus ID, your name, your email, or anything else identifying
+into it. If you have not received a nonce, email the instructor rather than inventing one.</li>
+</ol>
+<p><strong>Artifact:</strong> <code>08-domain-proof.md</code></p>
+<blockquote>
+<p><strong>Arrange your name in the first 48 hours.</strong> Registrar verification emails, ICANN verification, and
+nameserver propagation are a third party&#39;s clock, not yours, and Week 2&#39;s lab assumes you
+already own one. This is the single most common reason a student falls behind in this course.</p>
+</blockquote>
+<blockquote>
+<p><strong>WHOIS is public too.</strong> Use your registrar&#39;s free WHOIS privacy if it offers one (Namecheap
+and Porkbun both do, at no cost). Without it, your name, postal address, and phone number
+are published. That is a real-world operational lesson and it is also just good hygiene.</p>
+</blockquote>
+<hr>
+<h3 id="task-9--reject-one-ai-claim-with-evidence-10-pts">Task 9 — Reject one AI claim, with evidence (10 pts)</h3>
+<p>Ask an AI assistant a <strong>consequential</strong> question about your own network evidence. Something
+like:</p>
+<ul>
+<li>&quot;Why is my service refusing connections from a second device I own?&quot;</li>
+<li>&quot;My <code>ping</code> fails but the website loads — is my network broken?&quot;</li>
+<li>&quot;What does <code>TIME_WAIT</code> on hundreds of sockets mean, and how do I fix it?&quot;</li>
+</ul>
+<p>Then <strong>check its answer against an artifact you captured</strong> and document a claim that is
+wrong, incomplete, or wrong-for-your-situation.</p>
+<p>Your write-up must contain:</p>
+<ol>
+<li>The exact prompt you used and the model/tool.</li>
+<li>The claim you are rejecting, quoted.</li>
+<li><strong>The artifact that rejects it</strong>, with the specific line quoted.</li>
+<li>What the model would have needed in order to answer correctly — and whether you could
+have given it that.</li>
+</ol>
+<p><strong>Artifact:</strong> <code>09-challenged-claim.md</code></p>
+<blockquote>
+<p><strong>This does not count:</strong> style nitpicks; asking a second model whether the first was wrong
+(models are not evidence about each other); or a claim with no connection to your own
+artifacts. <strong>Not using AI at all?</strong> Use the
+<a href="../../docs/non-ai-review-artifacts.html#hw1---capture-interpretation-draft">HW1 course-supplied capture-interpretation draft</a>
+for the same marks. Cite that source instead of inventing a personal prompt.
+The <a href="reference.html">public reference</a> supplies vocabulary and evidence boundaries.</p>
+</blockquote>
+<hr>
+<h2 id="4-the-eight-part-evidence-standard">4. The eight-part evidence standard</h2>
+<p>Every submission in this course carries all eight. Full text:
+<a href="../../docs/evidence-standard.html"><code>docs/evidence-standard.md</code></a>.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>#</th><th>Part</th><th>What it looks like in HW1</th></tr></thead><tbody><tr><td>1</td><td>Commit SHA or tag</td><td>Your dossier repo, tagged <code>hw1-submission</code></td></tr><tr><td>2</td><td>Reproduction commands + config</td><td>Every literal command line you ran</td></tr><tr><td>3</td><td>Raw sanitised evidence</td><td>The pcapng, the HAR, the traces</td></tr><tr><td>4</td><td>Annotated interpretation</td><td>Your words, per artifact</td></tr><tr><td>5</td><td>A deliberate failure + diagnosis</td><td>Task 3, plus task 7</td></tr><tr><td>6</td><td>AI-use log</td><td>What you generated, accepted, rejected, and how you verified</td></tr><tr><td>7</td><td>One challenged claim</td><td>Task 9</td></tr><tr><td>8</td><td>Redaction attestation</td><td>See below — <strong>it is graded</strong></td></tr></tbody></table></div>
+<p><strong>Your redaction attestation</strong> goes in <code>README.md</code> and must be specific:</p>
+<blockquote>
+<p>I have reviewed every artifact in this dossier. I redacted: my host name (01), MAC address
+interface identifiers (01), my public IP (05), and session cookies in the HAR (06). I
+confirm no live secrets, tokens, cookies, or authorization codes remain. Private RFC 1918
+addresses were deliberately left intact as evidence.</p>
+</blockquote>
+<p>&quot;I redacted everything sensitive&quot; is <strong>not</strong> an attestation. Name what you removed.</p>
+<hr>
+<h2 id="5-the-domain-and-the-hardship-path">5. The domain, and the hardship path</h2>
+<p>Operating a domain <strong>or assigned course subdomain</strong> is required; buying one is
+not. Both exercise real DNS, ownership boundaries and TTLs. Follow
+<a href="../../docs/getting-started.html#5-domains-choose-the-no-cost-route-or-your-own-registration">getting started</a>
+for registrar/registry/DNS-host roles, no-cost access, renewal and record verification.</p>
+<p><strong>If the cost is a problem, a course-managed subdomain is available.</strong> Email the instructor
+the single line <em>&quot;I&#39;d like the course subdomain for HW1.&quot;</em></p>
+<ul>
+<li><strong>No explanation is required, and none will be asked for.</strong></li>
+<li>The request is private. It is not visible to your classmates, your section, or the grader.</li>
+<li><strong>There is no grade difference.</strong> Use the instructor-issued opaque hostname.
+If it is a record in the course zone rather than an independently delegated
+child zone, document the parent owner&#39;s delegation and your record-change
+rights instead of claiming you changed registrar nameservers.</li>
+<li>Ask any time, including in Week 4 if circumstances change.</li>
+</ul>
+<p>Some students also have a domain already, or get one free through a student developer pack
+(GitHub Student, Namecheap education). Those count. Use them.</p>
+<hr>
+<h2 id="6-if-you-cannot-run-wireshark">6. If you cannot run Wireshark</h2>
+<p>This is common and it is not your fault: managed laptops, MDM profiles that block Npcap,
+locked-down lab machines, no admin rights, or a full-tunnel VPN that hides the traffic.</p>
+<p><strong>You are never blocked, and the alternative path is worth full marks.</strong> Do all three:</p>
+<ol>
+<li><strong>Use the provided capture.</strong> Open
+<a href="samples/week01-fallback-capture.pcap"><code>samples/week01-fallback-capture.pcap</code></a> and run all
+four display filters against it. Read
+<a href="samples/index.html"><code>samples/README.md</code></a> first — it states exactly which parts of that
+file are real and which are reconstructed, and your annotation must repeat that
+distinction.</li>
+<li><strong>Replace the missing evidence</strong> with two things you <em>can</em> capture:<ul>
+<li><code>curl -v --trace-ascii trace.txt https://&lt;site&gt;/</code> — a real byte-level trace of the
+bytes your machine actually sent and received</li>
+<li>the DevTools HAR from task 6, with the timing breakdown expanded</li>
+</ul>
+</li>
+<li><strong>Say so, in one sentence, in your <code>README.md</code>.</strong> Name the blocker. &quot;Managed device; no
+admin rights to install Npcap&quot; is a complete and acceptable answer.</li>
+</ol>
+<p><strong>Do not</strong> submit the fallback capture as though it were yours. That is the fabrication rule,
+and it is the one thing in this course that is not a grade conversation.</p>
+<hr>
+<h2 id="7-rubric">7. Rubric</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>#</th><th>Artifact</th><th style="text-align:right">Points</th></tr></thead><tbody><tr><td>1</td><td>Network config, read and converted to CIDR</td><td style="text-align:right">10</td></tr><tr><td>2</td><td>Socket and port map, with the bind-address distinction</td><td style="text-align:right">10</td></tr><tr><td>3</td><td>Three failure shapes, reproduced, with what each rules out</td><td style="text-align:right">10</td></tr><tr><td>4</td><td>Packet capture, four filters, four annotations</td><td style="text-align:right">20</td></tr><tr><td>5</td><td><code>curl -v</code> trace and timing breakdown</td><td style="text-align:right">10</td></tr><tr><td>6</td><td>HAR, waterfall, and slowest-request analysis</td><td style="text-align:right">10</td></tr><tr><td>7</td><td>Two injected-failure diagnoses</td><td style="text-align:right">12</td></tr><tr><td>8</td><td>Domain or assigned-subdomain proof of control</td><td style="text-align:right">8</td></tr><tr><td>9</td><td>One rejected AI claim, with the artifact that rejects it</td><td style="text-align:right">10</td></tr><tr><td>—</td><td><strong>Evidence standard: AI-use log + redaction attestation</strong></td><td style="text-align:right"><strong>included in evidence marks above; no additional blanket deduction</strong></td></tr><tr><td></td><td><strong>Total</strong></td><td style="text-align:right"><strong>100</strong></td></tr></tbody></table></div>
+<p>Score missing evidence items once within the 40% evidence share, not both in a
+task row and again as a fixed penalty. Independently demonstrated domain credit
+is retained. The syllabus&#39;s explicit safety/integrity rules remain separate.</p>
+<p><strong>How task 4&#39;s 20 points split:</strong> capture file present and correctly filtered (4) · four
+stages annotated at all (8) · each annotation states what the evidence <strong>does not</strong> prove (4)
+· each states how you would check independently (4).</p>
+<p><strong>Hand-drawn sequence diagram (required, folded into task 4&#39;s annotation marks):</strong> draw the
+URL-to-pixel chain <strong>by hand</strong> and photograph or export it.</p>
+<p><strong>Scope, so you do not have to guess:</strong> all <strong>twelve</strong> links from the Block C diagram —
+parse URL, caches, DNS, TCP, TLS, HTTP, edge/CDN, origin, parse HTML, execute JS, render,
+interact. Draw it as a <strong>sequence</strong> with these five actors as columns:</p>
+<pre><code>  your browser  |  your OS + NAT  |  resolver  |  edge/CDN  |  origin
+</code></pre>
+<p><strong>Show the translation explicitly</strong>: the source address and port on the inside, and the pair
+the far end reported, from task 4. If your machine has a public address or a global IPv6 path
+and <strong>no translation occurred</strong>, draw that instead and label it <em>&quot;no translation observed —
+public address&quot;</em>. Observing the absence correctly is worth the same as observing the presence.
+Label at least three links with the week of this course that owns them.</p>
+<p><strong>Not exported from a diagramming tool</strong> — drawing it yourself, from memory, is how it stops
+being a slide you saw and becomes a map you own. <strong>Paper and a photo, a tablet and a stylus,
+or a hand-typed structured outline are all equally acceptable</strong>; use whichever works for you.
+Legibility matters — if a photo is hard to read, transcribe the labels underneath it. We are
+grading the structure, not the penmanship.</p>
+<hr>
+<h2 id="8-a-worked-example--the-depth-we-expect">8. A worked example — the depth we expect</h2>
+<p><strong>This is the single most useful section of this handout.</strong> Below is what one stage of task
+4 looks like at full marks. <a href="samples/capture-walkthrough.html"><code>samples/capture-walkthrough.md</code></a>
+does all four stages this way; read it before you start writing.</p>
+<hr>
+<blockquote>
+<h3 id="stage-1--dns">Stage 1 — DNS</h3>
+<p><strong>Display filter:</strong> <code>dns</code> · <strong>Matched:</strong> packets 1–2</p>
+<pre><code class="language-text">1   10.0.20.252:54988 -&gt; 1.1.1.1:53    Standard query    A example.com
+2   1.1.1.1:53 -&gt; 10.0.20.252:54988    Standard response A 104.20.23.154
+                                                         A 172.66.147.243
+</code></pre>
+<p>From packet 2:</p>
+<pre><code class="language-text">transaction id  0x7138    matches the query — this is how the stub resolver
+                          knows the answer belongs to its question
+flags           0x8180    QR=1, RD=1, RA=1, RCODE=0 (NOERROR)
+answers         2
+answer 1        type A  ttl 224  rdata 104.20.23.154
+</code></pre>
+<p><strong>What this proves.</strong> The name resolved, to <strong>two</strong> addresses, with <strong>224 seconds</strong> left on
+the TTL. That 224 is not the record&#39;s configured value — it is the remainder of a countdown
+already running at the resolver, so somebody else asked about 76 seconds ago (assuming a
+300 s record). My capture reflects a resolver&#39;s memory, not the zone.</p>
+<p><strong>What it does not prove.</strong> Nothing about whether either address is reachable, whether the
+service is up, or whether this is the answer anyone else would get. Two addresses came
+back; my client picked one, and that choice happens below the application.</p>
+<p><strong>How I would check independently.</strong></p>
+<pre><code class="language-bash">dig +noall +answer example.com A            # ask again, watch the TTL count down
+dig @8.8.8.8 +noall +answer example.com A   # a second, independent resolver
+</code></pre>
+<p><strong>What surprised me.</strong> The query is UDP and it is 29 bytes. The single most consequential
+lookup in the whole page load travels in one unacknowledged, unencrypted datagram.</p>
+</blockquote>
+<hr>
+<h2 id="9-what-good-looks-like-vs-what-will-lose-points">9. What good looks like vs. what will lose points</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Loses points</th><th>Earns points</th></tr></thead><tbody><tr><td>&quot;Packet 6 is the TLS ClientHello.&quot;</td><td>&quot;Packet 6 carries <code>server_name: example.com</code> in cleartext, so the hostname is visible on-path even though the payload is not.&quot;</td></tr><tr><td>&quot;The handshake completed successfully.&quot;</td><td>&quot;The handshake proves a listener accepted the connection; it says nothing about service health — a wedged process still shakes hands.&quot;</td></tr><tr><td>A screenshot of the Wireshark window</td><td>The display filter, the packet numbers it matched, and the field values you read</td></tr><tr><td>&quot;My gateway is 192.168.1.1 and so is my DNS.&quot;</td><td>&quot;All three roles are the same box because a home router co-locates them; if the resolver failed, names would break and addresses would still route.&quot;</td></tr><tr><td>&quot;AI told me to bind to 0.0.0.0 and it worked.&quot;</td><td>&quot;The model suggested binding to <code>0.0.0.0</code>. My <code>ss -ltnp</code> output already showed <code>0.0.0.0:8080</code>, so the suggestion was already satisfied and could not have been the cause.&quot;</td></tr><tr><td>Silence about what an artifact cannot show</td><td>&quot;Bodies are encrypted from packet 14 on, so I used <code>curl -v</code> for the HTTP layer — attached as <code>05-curl-trace.txt</code>.&quot;</td></tr><tr><td>A HAR with a live session cookie in it</td><td>A HAR with <code>[REDACTED:cookie]</code> in place, the field retained, and a specific attestation</td></tr></tbody></table></div>
+<hr>
+<h2 id="10-time-estimate">10. Time estimate</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Task</th><th style="text-align:right">Estimate</th></tr></thead><tbody><tr><td>1 · Network config</td><td style="text-align:right">25 min</td></tr><tr><td>2 · Socket map</td><td style="text-align:right">20 min</td></tr><tr><td>3 · Failure shapes</td><td style="text-align:right">20 min</td></tr><tr><td>4 · Capture + four annotations</td><td style="text-align:right"><strong>90 min</strong></td></tr><tr><td>5 · <code>curl -v</code> + timings</td><td style="text-align:right">25 min</td></tr><tr><td>6 · HAR + waterfall</td><td style="text-align:right">35 min</td></tr><tr><td>7 · Two failure diagnoses</td><td style="text-align:right">50 min</td></tr><tr><td>8 · Domain or assigned-subdomain proof</td><td style="text-align:right">30 min</td></tr><tr><td>9 · Challenged AI claim</td><td style="text-align:right">30 min</td></tr><tr><td>Assembling, sanitising, attestation</td><td style="text-align:right">25 min</td></tr><tr><td><strong>Total</strong></td><td style="text-align:right"><strong>≈ 5 h 50 m</strong></td></tr></tbody></table></div>
+<p><strong>Read that number honestly.</strong> 5 h 50 m assumes you have seen a subnet mask before. <strong>If you
+have no networking background at all, budget 9 hours and start early</strong> — the CIDR arithmetic
+in task 1 and the packet-byte reading in task 4 are new <em>skills</em>, not just new commands, and
+new skills take longer than the person who wrote the estimate remembers.</p>
+<p>The two tasks that most often overrun:</p>
+<ul>
+<li><strong>Task 4</strong>, if Wireshark fights your machine or DNS-over-HTTPS hides your queries. Add
+60–90 minutes. <strong>Switch to §6&#39;s alternative path the moment you have lost ten minutes to
+an installer</strong> — it is worth full credit and it exists precisely so nobody loses an evening.</li>
+<li><strong>Task 7</strong>, if you try to write the diagnosis before you have read all the evidence files.
+Read the whole bundle first, then write. It halves the time.</li>
+</ul>
+<p><strong>Start on the day it is assigned.</strong> Not because it is long, but because task 8 depends on a
+registrar&#39;s verification email and task 4 may depend on an installer that needs a reboot —
+neither of which respects your Sunday night.</p>
+<p>Complete <a href="../../docs/web-foundations.html">foundations steps 1–3</a> within this work
+budget. Reuse lab captures and the full-credit fixture path instead of spending
+another hour recapturing/polishing; no extra assessed artifact is required.
+The estimate is not an instruction to add unlimited setup time.</p>
+<hr>
+<h2 id="11-submission">11. Submission</h2>
+<blockquote>
+<h3 id="-this-dossier-describes-your-machine-keep-it-private">⚠ This dossier describes your machine. Keep it private.</h3>
+<p>It contains your network topology, your listening services, your registrar account, and a
+HAR of your browsing. Treat it as sensitive:</p>
+<ul>
+<li><strong>Submit through D2L, or through a repository set to private and shared only with course
+staff.</strong> Do not publish it. Do not push it to a public profile.</li>
+<li><strong>Do not paste raw artifacts into an AI assistant</strong> for task 9. Sanitise first — replace
+addresses, host names, and cookies — or describe the situation in prose and ask about the
+concept. Whatever you paste into a third-party service, you have published.</li>
+<li>Delete the domain-verification TXT record once your grade is posted.</li>
+</ul>
+</blockquote>
+<p>A single repository, or a single <code>.zip</code> if you prefer, named:</p>
+<pre><code>csc436-hw1-&lt;lastname&gt;-&lt;campusid&gt;/
+├── README.md                     &lt;- see below; this is graded
+├── 01-network-config.txt
+├── 02-socket-map.txt
+├── 03-failure-shapes.txt
+├── 04-capture.pcapng             &lt;- or 04-trace.txt on the no-capture path
+├── 04-capture-annotated.md
+├── 04-sequence-diagram.jpg       &lt;- your hand-drawn chain, including NAT
+├── 05-curl-trace.txt
+├── 06-network.har
+├── 06-waterfall.md
+├── 07-failure-diagnoses.md
+├── 08-domain-proof.md
+└── 09-challenged-claim.md
+</code></pre>
+<blockquote>
+<p><strong>Note the numbering.</strong> The lab has you save files as you go under slightly different names
+— the lab&#39;s <code>05-capture.pcapng</code> is this list&#39;s <code>04-capture.pcapng</code>, because the homework
+numbers by <em>task</em> and the lab numbers by <em>step</em>. <strong>Rename when you assemble the dossier.</strong>
+The names above are the ones that are graded.</p>
+</blockquote>
+<p><code>README.md</code> must contain, in this order: your name and campus ID; your commit SHA or tag;
+the platform and OS version you worked on; a one-line index of the artifacts; your <strong>AI-use
+log</strong>; and your <strong>redaction attestation</strong>.</p>
+<p>Submit the repository URL (or the zip) in D2L before class in Week 2.</p>
+<hr>
+<h2 id="12-the-non-generatable-component-stated-plainly">12. The non-generatable component, stated plainly</h2>
+<p>A model can explain DHCP, TCP, NAT, and TLS better than this handout does. It cannot:</p>
+<ul>
+<li><strong>See your capture.</strong> It has never met your resolver, your gateway, or your NAT pool. Every
+number in tasks 1 through 6 came from a machine no model has access to.</li>
+<li><strong>Hold your operating responsibility.</strong> Task 8 requires your authorized domain
+or course-subdomain workflow, not a mandatory payment method.</li>
+<li><strong>Be wrong in a way you can prove.</strong> Task 9 requires you to catch it — which means you have
+to understand the artifact better than the model does, at least once.</li>
+</ul>
+<p>Label every number&#39;s source: your run, a supplied fixture, or a cited example.
+Shared fixture bytes are expected to match; explanations and interpretation
+must be your own. Similar output alone is not proof of misconduct.</p>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>

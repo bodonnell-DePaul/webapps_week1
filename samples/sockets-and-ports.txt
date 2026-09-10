@@ -1,0 +1,185 @@
+CSC 436 — Week 1 — Ports, sockets, and why "it works on localhost" means nothing
+Real output. Captured 2026-08-15. Sanitised per samples/README.md.
+================================================================================
+  This file is the evidence behind the one sentence Block B exists to prove:
+
+      A LISTENING SOCKET IS AN ADDRESS *AND* A PORT.
+      If you got the address wrong, the port was never the problem.
+================================================================================
+
+
+PART 1 — THE SERVER UNDER TEST
+--------------------------------------------------------------------------------
+A five-line HTTP server, so nothing about the application can be blamed. The only
+variable across this whole file is the ADDRESS it binds to.
+
+    const http = require("http");
+    const host = process.argv[2], port = Number(process.argv[3] || 8471);
+    http.createServer((q, s) => {
+      s.writeHead(200, { "content-type": "text/plain" });
+      s.end("campuspulse ok\n");
+    }).listen(port, host, () => console.log("listening on " + host + ":" + port));
+
+    $ node srv.js 127.0.0.1 8471
+    listening on 127.0.0.1:8471
+
+The log line says it started. The log line is not evidence of reachability. Every
+"it works on my machine" incident in this course starts with someone trusting it.
+
+
+PART 2 — WHAT THE OPERATING SYSTEM ACTUALLY DID
+--------------------------------------------------------------------------------
+
+    $ netstat -ano | findstr :8471
+
+      TCP    127.0.0.1:8471         0.0.0.0:0              LISTENING       41768
+             ^^^^^^^^^                                                     ^^^^^
+             the local ADDRESS half of the socket                          PID
+
+    PowerShell, same fact, better typed:
+
+    $ Get-NetTCPConnection -State Listen -LocalPort 8471
+
+    LocalAddress LocalPort  State OwningProcess
+    ------------ ---------  ----- -------------
+    127.0.0.1         8471 Listen         41768
+
+Read the local address column, not the port. `127.0.0.1` means: accept connections
+that arrive **on the loopback interface only**. Traffic arriving on any other
+interface — including this same machine's own LAN address — is not eligible.
+
+
+PART 3 — THE SAME MACHINE, THREE ADDRESSES, TWO ANSWERS
+--------------------------------------------------------------------------------
+Every command below ran on the machine hosting the server. Nothing is remote.
+Nothing is firewalled. This is one host talking to itself.
+
+    $ curl -sS --max-time 6 http://127.0.0.1:8471/
+    campuspulse ok                                            # 200 OK
+
+    $ curl -sS --max-time 6 http://localhost:8471/
+    campuspulse ok                                            # 200 OK
+
+    $ curl -sS --max-time 6 -v http://10.0.20.252:8471/
+    *   Trying 10.0.20.252:8471...
+    * connect to 10.0.20.252 port 8471 from 0.0.0.0 port 62631 failed: Connection refused
+    * Failed to connect to 10.0.20.252:8471 after 2013 ms: Could not connect to server
+    * closing connection #0
+    curl: (7) Failed to connect to 10.0.20.252:8471 after 2013 ms: Could not connect to server
+
+  ---> 10.0.20.252 IS THIS MACHINE. Same host. Same port. Same running process.
+       Connection refused.
+
+  If you demo one thing in this course, demo this. The service is up, the port is
+  right, the process is healthy, the firewall is irrelevant — and the connection is
+  refused, from itself. `localhost` was never a synonym for "this computer". It is
+  the name of one specific interface out of several.
+
+  Note "Connection refused", not a hang. Something answered. The host was reachable,
+  the packet arrived, the kernel looked for a socket bound to (10.0.20.252, 8471),
+  found none, and replied with a TCP RST. A refusal is an answer. Keep that.
+
+  Note also the 2013 ms. On Windows a refused loopback connection is retried before
+  curl gives up, so "refused" is not always instant. Do not diagnose by stopwatch
+  alone — read the error, then confirm with the listening socket.
+
+
+PART 4 — THE FIX, AND THE EVIDENCE THAT IT IS A FIX
+--------------------------------------------------------------------------------
+
+    $ node srv.js 0.0.0.0 8471
+    listening on 0.0.0.0:8471
+
+    $ netstat -ano | findstr :8471
+
+      TCP    0.0.0.0:8471           0.0.0.0:0              LISTENING       25224
+             ^^^^^^^ the wildcard address: every IPv4 interface on this host
+
+    $ curl -sS --max-time 6 http://127.0.0.1:8471/
+    campuspulse ok
+
+    $ curl -sS --max-time 6 http://10.0.20.252:8471/
+    campuspulse ok                          # the command that failed 30 seconds ago
+
+  ONE character of configuration. Nothing about the application changed. The diff
+  between a broken deployment and a working one is which address the socket claimed.
+
+  This is exactly the shape of the Week 3 container failure, and the reason your
+  container contract says the service must bind 0.0.0.0 and expose /healthz. A
+  server bound to 127.0.0.1 inside a container is unreachable from outside it, and
+  the container logs will cheerfully say "listening".
+
+    ::: on macOS and Linux the same evidence is one command:
+    $ ss -ltnp | grep 8471          # Linux
+    $ lsof -nP -iTCP:8471 -sTCP:LISTEN   # macOS
+
+
+PART 5 — TWO-TUPLE VS FOUR-TUPLE, AND WHERE EPHEMERAL PORTS COME FROM
+--------------------------------------------------------------------------------
+Captured while a request was in flight against the 0.0.0.0-bound server:
+
+    $ netstat -ano | findstr :8471
+
+      TCP    0.0.0.0:8471           0.0.0.0:0              LISTENING       25224
+      TCP    10.0.20.252:62681      10.0.20.252:8471       TIME_WAIT       0
+      TCP    10.0.20.252:62684      10.0.20.252:8471       TIME_WAIT       0
+      TCP    127.0.0.1:62630        127.0.0.1:8471         TIME_WAIT       0
+      TCP    127.0.0.1:62640        127.0.0.1:8471         TIME_WAIT       0
+      TCP    127.0.0.1:62680        127.0.0.1:8471         TIME_WAIT       0
+
+  A LISTENING socket is identified by TWO values:
+
+      (local address, local port)          ->  0.0.0.0 : 8471
+
+  A CONNECTED socket is identified by FOUR:
+
+      (local addr, local port, remote addr, remote port)
+       10.0.20.252 : 62681  <->  10.0.20.252 : 8471
+
+  That four-tuple is why one server port serves thousands of simultaneous clients
+  without ambiguity. The server side of every row above is the same 8471. The rows
+  are distinct because the CLIENT ports differ. Nothing is multiplexed by magic;
+  it is multiplexed by the tuple.
+
+  62681, 62684, 62630 — the client never chose these. The kernel allocated them
+  from the ephemeral range:
+
+    $ netsh int ipv4 show dynamicport tcp
+
+    Protocol tcp Dynamic Port Range
+    ---------------------------------
+    Start Port      : 49152
+    Number of Ports : 16384                 # so 49152 - 65535, per IANA
+
+  Ranges by platform, for reference:
+    Windows (modern) 49152-65535    Linux 32768-60999    macOS 49152-65535
+
+  TIME_WAIT is not a leak. After a close, the closing side holds the four-tuple
+  for 2*MSL so a late duplicate segment from the old connection cannot be
+  delivered to a new connection that happens to reuse the same tuple. It clears on
+  its own. You will meet it again in Week 5 under load, when a load generator
+  exhausts the ephemeral range and every new connection fails while the service is
+  perfectly healthy — a failure that looks like the server and is the client.
+
+
+PART 6 — THE PORT IS A MACHINE-WIDE NAMESPACE WITH EXACTLY ONE OWNER
+--------------------------------------------------------------------------------
+Observed during authoring, unedited, and worth more than any invented example:
+
+    $ curl -sS http://127.0.0.1:8080/
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>CampusPulse — service status</title>
+    ...
+
+  That output came from a process nobody involved had started — a different tool on
+  the same host had already claimed 8080. `netstat -ano` named the owner by PID and
+  settled it in four seconds.
+
+  The lesson: a 200 OK on your port is not proof your server answered it. Check
+  the PID. `netstat -ano` on Windows, `ss -ltnp` on Linux, `lsof -nP -iTCP -sTCP:LISTEN`
+  on macOS. Then check that the PID is the process you started.
+
+  This is failure `injected-failures/failure-02` in a different costume, and it is
+  why HW1 asks for a socket map rather than a screenshot of a working browser tab.
