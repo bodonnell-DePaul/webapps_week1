@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSC 436: Web Application Systems - From URL to Operable Product - CSC 436</title>
+<link rel="stylesheet" href="../assets/course.css">
+<link rel="icon" type="image/svg+xml" href="../assets/course-icon.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="course-name" href="../index.html">CSC 436</a>
+<nav aria-label="Course">
+<a href="getting-started.html">Start here</a>
+<a href="new_syllabus.html">Syllabus</a>
+<a href="course-map.html">Course map</a>
+<a href="../final-project/index.html">Final project</a>
+</nav></header>
+<main id="main">
+<p class="source-link"><a href="new_syllabus.md" download>Download Markdown source</a></p>
+<h1 id="csc-436-web-application-systems---from-url-to-operable-product">CSC 436: Web Application Systems - From URL to Operable Product</h1>
+<p><strong>Meeting Time:</strong> Thursday, 5:45 PM - 9:00 PM</p>
+<p><strong>Location:</strong> LEWIS 1510, Loop Campus</p>
+<p><strong>Course Webpage:</strong> <a href="https://d2l.depaul.edu">D2L Portal</a></p>
+<p><strong>Prerequisites:</strong> CSC 447 and CSC 435</p>
+<p><strong>Term:</strong> Autumn 2026. D2L is the system of record for dated deadlines,
+announcements, submissions and approved accommodations. Policy changes are
+announced explicitly; an unannounced difference in a handout does not override
+this syllabus.</p>
+<hr>
+<h2 id="instructor-information">Instructor Information</h2>
+<ul>
+<li><strong>Name:</strong> Brian O&#39;Donnell</li>
+<li><strong>Email:</strong> <a href="mailto:bodonne3@depaul.edu">bodonne3@depaul.edu</a></li>
+<li><strong>Office Location:</strong> Discord or Teams</li>
+<li><strong>Office Hours:</strong> Monday, 12:00-1:00 PM and Tuesday, 1:30-2:30 PM on Discord</li>
+</ul>
+<p>Use D2L for the current private Discord/Teams access links and any announced
+schedule changes.</p>
+<hr>
+<h2 id="course-description">Course Description</h2>
+<p>This course is about how web applications work after code is written. Students
+learn how a browser reaches an application, how the application is deployed, how
+users are authenticated, how data is stored, and how to tell whether the system is
+working correctly.</p>
+<p>Students will build and operate one application across the quarter. The focus is
+not on memorizing one framework or producing advanced visual design. The focus is
+on understanding the pieces of a web system, making responsible technical
+decisions, testing those decisions with evidence, and explaining the results in
+plain language.</p>
+<p><strong>No previous web-application, HTML/CSS/JavaScript, networking, DNS, TLS, or
+cloud experience is assumed.</strong> The programming prerequisites above remain in
+place. The <a href="getting-started.html">getting-started guide</a> and
+<a href="web-foundations.html">guided web foundations</a> introduce the browser, terminal,
+Git, HTML, CSS, JavaScript, requests, forms, APIs and a first working application
+before students are expected to review a generated React/TypeScript application.</p>
+<p>Generative AI tools may help create code, but they do not make the code correct,
+secure, deployed, observable, or explainable. Students may use generated code
+where allowed, but they must verify it, revise it, document what they used, and
+explain how they know the system works.</p>
+<h3 id="terms-used-in-this-course">Terms Used in This Course</h3>
+<p>The course materials introduce technical vocabulary gradually. These short
+definitions are included so the syllabus does not assume prior web experience.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td>Web application</td><td>Software that users access through a browser or web API.</td></tr><tr><td>Browser</td><td>The program, such as Chrome, Edge, Firefox or Safari, that requests and displays web pages.</td></tr><tr><td>HTML</td><td>The markup language that gives a page its structure.</td></tr><tr><td>CSS</td><td>The language used to control page appearance and layout.</td></tr><tr><td>JavaScript</td><td>The programming language that runs in the browser and often on servers.</td></tr><tr><td>React</td><td>A JavaScript library commonly used to build interactive browser interfaces.</td></tr><tr><td>TypeScript</td><td>JavaScript with added type checking to catch more mistakes before code runs.</td></tr><tr><td>HTTP</td><td>The request-and-response protocol browsers and web servers use to exchange pages and data.</td></tr><tr><td>API</td><td>A defined way for one program to request data or actions from another program.</td></tr><tr><td>DNS</td><td>The system that translates a name such as <code>example.com</code> into the network address of a server.</td></tr><tr><td>TLS</td><td>The security technology behind HTTPS. It encrypts traffic and helps prove the server is the one the browser meant to reach.</td></tr><tr><td>Domain</td><td>A human-readable internet name, such as <code>example.com</code>.</td></tr><tr><td>Container</td><td>A packaged way to run an application with its needed files and settings. Docker is a common container tool.</td></tr><tr><td>Deployment</td><td>Putting an application somewhere users or testers can reach it.</td></tr><tr><td>CDN</td><td>A content delivery network: servers near users that can deliver cached files quickly.</td></tr><tr><td>Authentication</td><td>Proving who a user is.</td></tr><tr><td>Authorization</td><td>Deciding what an authenticated user is allowed to do.</td></tr><tr><td>OAuth / OIDC</td><td>Common standards used by applications to sign users in and authorize access without sharing passwords with the application.</td></tr><tr><td>MCP</td><td>Model Context Protocol: a way for AI assistants to use external tools or data sources through defined interfaces.</td></tr><tr><td>Observability</td><td>Collecting logs, metrics and traces so you can understand what a system is doing.</td></tr><tr><td>SLO</td><td>A service-level objective: a measurable reliability goal, such as how often a service should respond successfully.</td></tr><tr><td>CI/CD</td><td>Continuous integration and continuous delivery: automated checks and release steps that run when code changes.</td></tr><tr><td>IaC</td><td>Infrastructure as code: defining servers, databases, DNS or cloud resources in files instead of only clicking through a website.</td></tr></tbody></table></div>
+<h3 id="course-format">Course Format</h3>
+<p>Class meetings combine short review, lecture, demonstrations, supported
+individual practice, and time to connect the week&#39;s ideas to the term project.
+The scheduled 5:45-9:00 PM meeting is 195 minutes; class plans include time for
+setup, questions, troubleshooting and recovery.</p>
+<p>Students should expect preparation before class and individual work after class.
+The amount and type of work will vary by week. Detailed readings, exercises,
+deliverables and due dates are posted in D2L and the weekly materials rather than
+fixed in this syllabus.</p>
+<p>Before Week 1, students complete an ungraded diagnostic and tooling checklist.
+The diagnostic directs support; it is not an entrance exam. Foundational practice
+is staged through the early weeks of the course.</p>
+<h3 id="individual-work-and-ai-use">Individual Work and AI Use</h3>
+<p><strong>Every part of the course is solo work.</strong> Assignments, labs, checkpoints, exams,
+demonstrations, incident exercises, and the final project are completed
+individually. There are no teams, paired activities, shared submissions, or
+divisions of responsibility among classmates.</p>
+<p>Each student owns their repository, application, deployment, evidence and
+explanations. When an exercise needs multiple roles or clients, that student
+operates separate test accounts or processes, or uses instructor-provided
+artifacts. Instructor-led debriefs follow individual work.</p>
+<p>Code generation is expected, disclosed, and unpenalized when allowed by the
+assignment. You must verify generated work, explain the evidence yourself, keep
+an AI-use log, and challenge one consequential AI claim per submission when the
+assignment requires it. Fabricated evidence, undisclosed assistance, and
+generative AI use on exams are not permitted. You remain responsible for the
+security, correctness, and licensing of everything submitted.</p>
+<p>A non-AI path is available: critique an instructor-supplied AI-generated artifact
+under the same requirements, with no grade difference. No paid AI subscription is
+required. Detector scores or an impression that writing &quot;sounds like AI&quot; are not
+proof of misconduct. See the full <a href="ai-use-policy.html">AI-use policy</a>.</p>
+<hr>
+<h2 id="grading-breakdown">Grading Breakdown</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Component</th><th>Weight</th></tr></thead><tbody><tr><td>Applied assignments</td><td>35%</td></tr><tr><td>Midterm exam</td><td>20%</td></tr><tr><td>Final-project milestone checks</td><td>10%</td></tr><tr><td>Final release, dossier, demonstration and individual oral defense</td><td>30%</td></tr><tr><td>Readiness checks, in-class checkoffs and exit tickets</td><td>5%</td></tr></tbody></table></div>
+<p>Applied assignments ask students to connect course concepts to their own running
+systems and to support claims with evidence. Milestone checks measure steady
+progress on the term project. Detailed assignment instructions, rubrics,
+deadlines and any week-specific adjustments are posted in D2L and the weekly
+materials.</p>
+<p>Participation consists of readiness checks and in-class checkoffs or exit
+tickets. The final component consists of the individual project artifact and an
+individual oral defense. There is no shared score.</p>
+<p>Code volume, framework sophistication, and visual polish are not grading
+categories unless a specific assignment rubric says otherwise.</p>
+<h3 id="grade-scale">Grade Scale</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>A</th><th>A-</th><th>B+</th><th>B</th><th>B-</th><th>C+</th><th>C</th><th>C-</th><th>D</th><th>F</th></tr></thead><tbody><tr><td>93+</td><td>90-92.9</td><td>87-89.9</td><td>83-86.9</td><td>80-82.9</td><td>77-79.9</td><td>73-76.9</td><td>70-72.9</td><td>60-69.9</td><td>Below 60</td></tr></tbody></table></div>
+<p>Final percentages are rounded once to one decimal place at the end of the
+quarter. There is no curve or extra credit.</p>
+<h3 id="submissions-gates-and-recovery">Submissions, Gates, and Recovery</h3>
+<ul>
+<li><strong>Late work:</strong> A 10% deduction per 24 hours, up to 72 hours; nothing is
+accepted afterward without an approved extension. Each student has two
+no-questions-asked 48-hour extensions, requested in D2L before the deadline.
+These cannot be used for milestone checks, the midterm or the final.</li>
+<li><strong>Regrades:</strong> Request a regrade in D2L within seven days, citing the rubric
+row. The entire artifact is re-evaluated.</li>
+<li><strong>Milestones:</strong> A milestone measures timely operational readiness; an
+assignment measures evidence and explanation. A single defect is not penalized
+twice. A milestone may be re-cleared once within one week for partial credit.</li>
+<li><strong>Recovery:</strong> If an earlier failure blocks later work, request the course&#39;s
+known-good baseline. Its use is recorded, not penalized.</li>
+<li><strong>Provider failures:</strong> Report documented outages, removed features, or changed
+terms. An approved substitute will be named without a penalty for the
+provider&#39;s failure. Monitoring and avoiding your own quota exhaustion remain
+your responsibility.</li>
+</ul>
+<h3 id="evidence-standard">Evidence Standard</h3>
+<p>Most applied work requires evidence, not just a screenshot or a statement that
+&quot;it works.&quot; Evidence may include commits or release tags, reproduction commands,
+configuration exports, sanitized logs, network captures, query results,
+deployment links, diagrams, or short written interpretations. The exact evidence
+required depends on the assignment and will be stated in the assignment
+instructions.</p>
+<p><strong>Screenshots alone are never sufficient unless an assignment explicitly says
+otherwise.</strong> Use the <a href="evidence-standard.html">evidence standard and checklist</a>.</p>
+<h3 id="midterm-exam">Midterm Exam</h3>
+<p>The midterm is individual, in class, and focused on material covered before the
+exam date. The final exam schedule and any exam-specific instructions are posted
+in D2L.</p>
+<h3 id="final-project-campuspulse">Final Project: CampusPulse</h3>
+<p>Each student independently develops a synthetic campus service-status and
+incident tracker. It is not an official University service and must not use real
+institutional or personal data. Alternative projects require instructor approval
+against the same learning goals.</p>
+<p>The final project asks students to demonstrate a working web application,
+authentication and authorization, persistent data, deployment, basic operational
+monitoring, safe handling of secrets, and a clear explanation of design choices.
+Some versions of the project may also include real-time updates, AI-tool
+integration through MCP, or other extensions introduced in the weekly materials.</p>
+<p>Exposed credentials, fabricated evidence, a non-reproducible deployment, or a
+publicly reachable system that is supposed to require authorization can forfeit
+credit in affected rubric categories. These problems may also require
+remediation before final credit is awarded. Suspected fabrication is referred to
+the University academic-integrity process.</p>
+<hr>
+<h2 id="tentative-course-schedule">Tentative Course Schedule</h2>
+<p>This schedule lists the course arc at a high level. Specific readings,
+activities, assignments, milestone details and due dates are posted in D2L and
+the weekly materials.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Week</th><th>Topics</th></tr></thead><tbody><tr><td>1</td><td>Course introduction; how a browser reaches a web page; basic networking vocabulary; development environment setup.</td></tr><tr><td>2</td><td>Domain names, DNS, HTTP requests and responses, and how to inspect browser/server communication.</td></tr><tr><td>3</td><td>Reading generated code; TypeScript, React and container basics; packaging an application so it runs consistently.</td></tr><tr><td>4</td><td>Deployment, HTTPS/TLS, trust, cost controls, and the first public or course-accessible release.</td></tr><tr><td>5</td><td>Delivery performance, caching, accessibility, basic monitoring, and user-visible reliability.</td></tr><tr><td>6</td><td>Midterm exam and an introduction to data modeling.</td></tr><tr><td>7</td><td>Real-time communication, tool-style application interfaces, and MCP concepts.</td></tr><tr><td>8</td><td>User sign-in, tokens, sessions, OAuth/OIDC, and authorization for web and tool-based access.</td></tr><tr><td>9</td><td>Threat modeling, application controls, secure configuration, and common misuse patterns.</td></tr><tr><td>10</td><td>Data at larger scale, query performance, migrations, incident response, and operational review.</td></tr><tr><td>Finals</td><td>Final release, evidence dossier, demonstration and individual oral defense. See D2L for the schedule.</td></tr></tbody></table></div>
+<hr>
+<h2 id="software-requirements">Software Requirements</h2>
+<ul>
+<li>A Windows, macOS, or Linux laptop capable of running Docker, Wireshark, and a
+modern browser with developer tools. Administrator rights may be needed for the
+required capture driver and Docker installation.</li>
+<li>16 GB RAM is recommended; 8 GB is workable.</li>
+<li>Git and a <a href="https://github.com">GitHub</a> account for your repository and
+automated checks.</li>
+<li><strong>Node.js 24 LTS</strong> for the tested course tooling and JavaScript/TypeScript
+examples, using the versions named in the weekly setup instructions.</li>
+<li>A domain or course-managed subdomain. A domain normally costs about $10-15 per
+year; a course-managed subdomain can be requested privately through D2L with
+no explanation or grade difference.</li>
+<li>Free or low-cost DNS/CDN, hosting, database, identity and telemetry services as
+specified in the weekly materials.</li>
+</ul>
+<p>Course materials provide Windows and native macOS examples. Equivalent captures
+and fallbacks are available when operating-system, VPN, network or hardware
+limitations prevent a particular exercise.</p>
+<p>The <a href="deployment-runbook.html">deployment runbook</a> connects local development to
+staging, production, custom DNS, certificate renewal, recovery and teardown.
+Students should configure required billing alerts before starting cloud-hosted
+work and should never share client secrets, tokens, passwords or private keys.</p>
+<h3 id="safe-use-of-course-systems">Safe Use of Course Systems</h3>
+<p>Capture, security and load exercises are limited to your own systems or
+explicitly designated course staging fixtures, within the stated concurrency,
+duration and technique limits. Do not target classmates&#39; projects, University
+infrastructure or third-party services beyond ordinary documented use. Do not
+capture another device&#39;s traffic or run security/load exercises against
+production.</p>
+<p>Credential attacks, social engineering, malware, persistence, and
+denial-of-service are prohibited. Provider terms also apply. Unauthorized testing
+can be an academic-integrity violation and unlawful.</p>
+<p>Use synthetic data, redact credentials, and tear down or de-list public
+deployments at the quarter&#39;s end. TLS protects the connection between a browser
+and server; it does not decide who is allowed to use the application. Live
+credentials in a submission result in a zero for that artifact and a required
+resubmission with rotation evidence.</p>
+<hr>
+<h2 id="communication-guidelines">Communication Guidelines</h2>
+<ul>
+<li>Use the <strong>D2L discussion board</strong> for course questions and announcements.</li>
+<li>Read the error, inspect the evidence, and form a hypothesis before requesting
+help.</li>
+<li>For technical help, include:<ul>
+<li>A sanitized capture, header dump, query plan, log excerpt, screenshot or
+other relevant artifact.</li>
+<li>Reproduction steps, your hypothesis, and what you already tried.</li>
+<li>Relevant context from the week&#39;s <a href="course-map.html">materials</a>.</li>
+</ul>
+</li>
+<li>Bring the actual evidence to office hours, not only &quot;it doesn&#39;t work.&quot;</li>
+<li>Use email or the course&#39;s private D2L channel for accommodations, hardship,
+extensions, or individual project support. Hardship requests require no
+explanation.</li>
+<li>Report inaccessible materials to the instructor. Course materials and student
+submissions follow the <a href="accessibility.html">accessibility standard</a>.</li>
+<li>Arrange midterm accommodations early, before Week 5 when possible. Letters and
+arrangements are not disclosed to classmates.</li>
+<li>Notify the instructor of religious-observance conflicts in the first two
+weeks.</li>
+<li>In a campus closure, check D2L and University email for continuity
+arrangements.</li>
+</ul>
+<p>The instructor is a <strong>mandated reporter</strong> for disclosures of sexual or
+relationship violence and must share them with the University&#39;s Title IX
+Coordinator. Confidential resources are listed in D2L. CampusPulse does not
+involve human-subjects research; do not collect data from human subjects for it.</p>
+<hr>
+<h2 id="learning-outcomes">Learning Outcomes</h2>
+<p>Students will:</p>
+<ul>
+<li>Build and explain a small accessible web application.</li>
+<li>Trace how a browser request becomes a rendered page.</li>
+<li>Use domains, DNS, HTTPS and deployment tools responsibly.</li>
+<li>Read, test and revise generated code and configuration.</li>
+<li>Package and run an application in a repeatable environment.</li>
+<li>Design basic data models and explain their tradeoffs.</li>
+<li>Add authentication and authorization appropriate to an application&#39;s users.</li>
+<li>Recognize common security risks and verify mitigations.</li>
+<li>Use logs, metrics, traces or other evidence to diagnose system behavior.</li>
+<li>Respond to an incident, explain what happened, and identify practical
+improvements.</li>
+<li>Defend technical decisions orally and in writing.</li>
+</ul>
+<hr>
+<h2 id="course-policies">Course Policies</h2>
+<h3 id="syllabus-changes">Syllabus Changes</h3>
+<p>Any changes will be announced in class, posted on D2L, and emailed.</p>
+<h3 id="diversity-and-inclusion">Diversity and Inclusion</h3>
+<p>This course values diverse perspectives and encourages open dialogue. Students
+are welcome to express their identities and experiences. Contact the instructor
+if the classroom environment does not meet these expectations.</p>
+<h3 id="online-course-evaluations">Online Course Evaluations</h3>
+<p>Please complete the anonymous course evaluations; time is provided in class.
+There is no grade incentive or penalty for completing an evaluation.
+More info: <a href="https://resources.depaul.edu/teaching-commons/teaching/Pages/online-teaching-evaluations.aspx">Teaching Commons</a></p>
+<h3 id="academic-integrity">Academic Integrity</h3>
+<p>This course follows DePaul&#39;s <a href="https://offices.depaul.edu/academic-affairs/faculty-resources/academic-integrity/Pages/default.aspx">Academic Integrity Policy and process</a>.</p>
+<p>Violations include:</p>
+<ul>
+<li>Sharing unreleased exam questions, assessment keys, or another student&#39;s work.</li>
+<li>Unauthorized assistance.</li>
+<li>Plagiarism.</li>
+</ul>
+<p>Sanctions apply to both providers and users of unauthorized content. Publishing
+your own required application is permitted within the synthetic-data,
+secret-handling and repository-visibility rules. Do not republish restricted
+instructor resources or private assessments.</p>
+<h3 id="academic-policies">Academic Policies</h3>
+<p>Students must manage enrollment and withdrawal per the
+<a href="https://academics.depaul.edu/calendar/Pages/default.aspx">University Academic Calendar</a>.</p>
+<p>More info: <a href="https://catalog.depaul.edu/student-handbooks/graduate/graduate-academic-policies/">Graduate academic policies</a>.
+College and program-specific requirements also apply.</p>
+<h3 id="incomplete-grades">Incomplete Grades</h3>
+<p>An incomplete requires instructor permission, satisfactory work already
+completed, and unusual or unforeseeable circumstances preventing completion.
+Request it before the term ends and follow any additional college approval and
+written completion requirements; it is not an automatic extension.
+Policy: <a href="https://catalog.depaul.edu/student-handbooks/graduate/graduate-academic-policies/grades/">Graduate grading policies</a></p>
+<h3 id="preferred-name-and-pronouns">Preferred Name and Pronouns</h3>
+<p>Students may request alternate names or pronouns.</p>
+<p>Guidance: <a href="https://offices.depaul.edu/university-registrar/Pages/preferred-name.aspx">University Registrar preferred-name page</a>,
+including its link to the current Preferred Name and Gender Policy.</p>
+<h3 id="students-with-disabilities">Students with Disabilities</h3>
+<p>Register with DePaul&#39;s Center for Students with Disabilities (CSD):</p>
+<ul>
+<li>Loop Campus: (312) 362-8002</li>
+<li>Lincoln Park: (773) 325-1677</li>
+<li>Email: <a href="mailto:csd@depaul.edu">csd@depaul.edu</a></li>
+</ul>
+<p>More info: <a href="https://offices.depaul.edu/student-affairs/about/departments/Pages/csd.aspx">CSD Services</a></p>
+
+</main>
+<footer>Individual coursework. D2L contains dated deadlines, submissions and private course access.</footer>
+</body>
+</html>
